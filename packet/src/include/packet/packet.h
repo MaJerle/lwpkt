@@ -63,29 +63,50 @@ typedef enum {
     PKT_STATE_STOP,
 } pkt_state_t;
 
+/**
+ * \brief           Packet result enumeration
+ */
 typedef enum {
-    pktOK = 0x00,
-    pktERR,
+    pktOK = 0x00,                               /*!< Function returns successfully */
+    pktERR,                                     /*!< General error for function status */
+    pktINPROG,                                  /*!< Receive is in progress */
+    pktVALID,                                   /*!< packet valid and ready to be read as CRC is valid and STOP received */
+    pktERRCRC,                                  /*!< CRC integrity error for the packet. Will not wait STOP byte if received */
+    pktERRSTOP,                                 /*!< Packet error with STOP byte, wrong character received for STOP */
+    pktWAITDATA,                                /*!< Packet state is in start mode, waiting start byte to start receiving */
+                                                
 } pktr_t;
 
+/**
+ * \brief           CRC structure for packet
+ */
 typedef struct {
-    uint8_t addr;
-    uint8_t data[PKT_MAX_DATA_LEN];
+    uint8_t crc;
+} pkt_crc_t;
+
+/**
+ * \brief           Packet structure
+ */
+typedef struct {
+    uint8_t addr;                               /* Current device address */
+    uint8_t data[PKT_MAX_DATA_LEN];             /* Memory to write received data */
 
     struct {
-        pkt_state_t state;
-        uint8_t from;
-        uint8_t to;
-        uint8_t cmd;
-        size_t len;
-        size_t index;
-    } m;
+        pkt_state_t state;                      /*!< Actual packet state machine */
+        pkt_crc_t crc;                          /*!< Packet CRC byte */
+        uint8_t from;                           /*!< Device address packet is coming from */
+        uint8_t to;                             /*!< Device address packet is intended for */
+        uint8_t cmd;                            /*!< Command packet */
+        size_t len;                             /*!< Number of bytes to receive */
+        size_t index;                           /*!< General index variable for multi-byte parts of packet */
+    } m;                                        /*!< Module that is periodically reset for next packet */
 } pkt_t;
 
-pktr_t  packet_init(pkt_t* pkt, uint8_t addr);
-pktr_t  packet_set_addr(pkt_t* pkt, uint8_t addr);
-pktr_t  packet_process(pkt_t* pkt, RINGBUFF_VOLATILE ringbuff_t* rx_rb);
-pktr_t  packet_write(pkt_t* pkt, RINGBUFF_VOLATILE ringbuff_t* tx_rb, uint8_t to, uint8_t cmd, const void* data, size_t len);
+pktr_t  pkt_init(pkt_t* pkt, uint8_t addr);
+pktr_t  pkt_set_addr(pkt_t* pkt, uint8_t addr);
+pktr_t  pkt_read(pkt_t* pkt, RINGBUFF_VOLATILE ringbuff_t* rx_rb);
+pktr_t  pkt_write(pkt_t* pkt, RINGBUFF_VOLATILE ringbuff_t* tx_rb, uint8_t to, uint8_t cmd, const void* data, size_t len);
+pktr_t  pkt_reset(pkt_t* pkt);
 
 /**
  * \}
