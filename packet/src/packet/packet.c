@@ -91,6 +91,12 @@ pkt_set_addr(pkt_t* pkt, uint8_t addr) {
     return pktOK;
 }
 
+/**
+ * \brief           Read raw data from RX buffer and prepare packet
+ * \param[in]       Packet instance
+ * \param[in]       rx_rb: Received data ringbuffer
+ * \return          \ref pktVALID when packet valid, member of \ref pktr_t otherwise
+ */
 pktr_t
 pkt_read(pkt_t* pkt, RINGBUFF_VOLATILE ringbuff_t* rx_rb) {
     uint8_t b;

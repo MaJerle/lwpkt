@@ -108,6 +108,13 @@ pktr_t  pkt_read(pkt_t* pkt, RINGBUFF_VOLATILE ringbuff_t* rx_rb);
 pktr_t  pkt_write(pkt_t* pkt, RINGBUFF_VOLATILE ringbuff_t* tx_rb, uint8_t to, uint8_t cmd, const void* data, size_t len);
 pktr_t  pkt_reset(pkt_t* pkt);
 
+#define pkt_get_from_addr(pkt)              ((pkt)->m.from)
+#define pkt_get_to_addr(pkt)                ((pkt)->m.to)
+#define pkt_get_data(pkt)                   ((pkt)->data)
+#define pkt_get_data_len(pkt)               ((pkt)->m.len)
+#define pkt_get_cmd(pkt)                    ((pkt)->m.cmd)
+#define pkt_is_for_me(pkt)                  ((pkt)->m.to == (pkt)->addr)
+
 /**
  * \}
  */
