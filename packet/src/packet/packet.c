@@ -31,16 +31,24 @@
  * Author:          Tilen MAJERLE <tilen@majerle.eu>
  * Version:         $_version_$
  */
+#include <string.h>
 #include "packet/packet.h"
-#include <stdio.h>
 
 #define PKT_IS_VALID(p)             ((p) != NULL)
 #define PKT_SET_STATE(p, s)         do { (p)->m.state = (s); (p)->m.index = 0; } while (0)
 #define PKT_RESET(p)                do { memset((p), 0x00, sizeof((p)->m)); (p)->m.state = PKT_STATE_START; } while (0)
 
+/* Start and STOP bytes definition */
 #define PKT_START_BYTE              0xAA
 #define PKT_STOP_BYTE               0x55
 
+/**
+ * \brief           Add new value to CRC instance
+ * \param[in]       crc: CRC instance
+ * \param[in]       in: Input data in byte format
+ * \param[in]       len: Number of bytes to process
+ * \return          Current CRC calculated value after all bytes or `0` on error input data
+ */
 static uint8_t
 crc_in(pkt_crc_t* c, const void* in, const size_t len) {
     const uint8_t* d = in;
@@ -63,6 +71,10 @@ crc_in(pkt_crc_t* c, const void* in, const size_t len) {
     return c->crc;
 }
 
+/**
+ * \brief           Initialize CRC instance to default values
+ * \param[in]       crc: CRC instance
+ */
 static void
 crc_init(pkt_crc_t* c) {
     memset(c, 0x00, sizeof(*c));
@@ -93,8 +105,8 @@ pkt_set_addr(pkt_t* pkt, uint8_t addr) {
 
 /**
  * \brief           Read raw data from RX buffer and prepare packet
- * \param[in]       Packet instance
- * \param[in]       rx_rb: Received data ringbuffer
+ * \param[in]       pkt: Packet instance
+ * \param[in]       rx_rb: RX ringbuffer to read received data from
  * \return          \ref pktVALID when packet valid, member of \ref pktr_t otherwise
  */
 pktr_t
@@ -186,7 +198,7 @@ pkt_read(pkt_t* pkt, RINGBUFF_VOLATILE ringbuff_t* rx_rb) {
 /**
  * \brief           Write packet data to TX ringbuffer
  * \param[in]       pkt: Packet instance
- * \param[in]       tx_rb: TX ringbuffer to write data to
+ * \param[in]       tx_rb: TX ringbuffer to write data to be transmitted afterwards
  * \param[in]       to_addr: End device address
  * \param[in]       cmd: Packet command
  * \param[in]       data: Pointer to input data. Set to `NULL` if not used
