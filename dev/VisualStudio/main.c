@@ -14,13 +14,34 @@ const char* data = "Hello World\r\n";
 int
 main() {
     pktr_t res;
+    uint8_t b;
     
     /* Initialize packet and its buffers with default address */
     pkt_init(&pkt, 0x12);
     ringbuff_init(&pkt_tx_rb, pkt_tx_rb_data, sizeof(pkt_tx_rb_data));
     ringbuff_init(&pkt_rx_rb, pkt_rx_rb_data, sizeof(pkt_rx_rb_data));
 
+    /* Write packet data to TX ringbuff... */
     res = pkt_write(&pkt, &pkt_tx_rb, 0x11, 0x85, data, strlen(data));
-    res = pkt_read(&pkt, &pkt_tx_rb);
+
+    /* Transmit TX buffer data to communication line... */
+    /* Write received data from communication line to RX buffer */
+
+    /* Copy buffers */
+    while (ringbuff_read(&pkt_tx_rb, &b, 1) == 1) {
+        ringbuff_write(&pkt_rx_rb, &b, 1);
+    }
+
+    /* Read data from RX ringbuffer */
+    res = pkt_read(&pkt, &pkt_rx_rb);
+
+    if (res == pktVALID) {
+        if (pkt_is_for_me(&pkt)) {
+            printf("Packet is for me\r\n");
+        } else {
+            printf("Packet is for device ID: %02X\r\n", (unsigned)pkt_get_to_addr(&pkt));
+        }
+    }
+
     return 0;
 }
