@@ -36,7 +36,7 @@
 
 #define PKT_IS_VALID(p)             ((p) != NULL)
 #define PKT_SET_STATE(p, s)         do { (p)->m.state = (s); (p)->m.index = 0; } while (0)
-#define PKT_RESET(p)                do { memset((p), 0x00, sizeof((p)->m)); (p)->m.state = PKT_STATE_START; } while (0)
+#define PKT_RESET(p)                do { memset(&(p)->m, 0x00, sizeof((p)->m)); (p)->m.state = PKT_STATE_START; } while (0)
 
 /* Start and STOP bytes definition */
 #define PKT_START_BYTE              0xAA
@@ -80,6 +80,12 @@ crc_init(pkt_crc_t* c) {
     memset(c, 0x00, sizeof(*c));
 }
 
+/**
+ * \brief           Initialize packet instance and set device address
+ * \param[in]       pkt: Packet instance
+ * \param[in]       addr: Current device address
+ * \return          \ref pktOK on success, member of \ref pktr_t otherwise
+ */
 pktr_t
 pkt_init(pkt_t* pkt, uint8_t addr) {
     if (pkt == NULL) {
@@ -94,11 +100,19 @@ pkt_init(pkt_t* pkt, uint8_t addr) {
     return pktOK;
 }
 
+/**
+ * \brief           Set device address for packet instance
+ * \param[in]       pkt: Packet instance
+ * \param[in]       addr: New device address
+ * \return          \ref pktOK on success, member of \ref pktr_t otherwise
+ */
 pktr_t
 pkt_set_addr(pkt_t* pkt, uint8_t addr) {
     if (!PKT_IS_VALID(pkt)) {
         return pktERR;
     }
+
+    pkt->addr = addr;
 
     return pktOK;
 }
@@ -116,7 +130,8 @@ pkt_read(pkt_t* pkt, RINGBUFF_VOLATILE ringbuff_t* rx_rb) {
         return pktERR;
     }
 
-    /* Process bytes from ringbuffer */
+    /* Process bytes from RX ringbuffer */
+    /* Read byte by byte and go through state machine */
     while (ringbuff_read(rx_rb, &b, 1) == 1) {
         switch (pkt->m.state) {
             case PKT_STATE_START: {
@@ -150,7 +165,7 @@ pkt_read(pkt_t* pkt, RINGBUFF_VOLATILE ringbuff_t* rx_rb) {
                 crc_in(&pkt->m.crc, &b, 1);
                 
                 /* Last length bytes has MSB bit set to 0 */
-                if (!(b & 0x80)) {
+                if ((b & 0x80) == 0x00) {
                     if (pkt->m.len == 0) {
                         PKT_SET_STATE(pkt, PKT_STATE_CRC);
                     } else {
@@ -180,7 +195,7 @@ pkt_read(pkt_t* pkt, RINGBUFF_VOLATILE ringbuff_t* rx_rb) {
                 break;
             }
             case PKT_STATE_STOP: {
-                PKT_RESET(pkt);             /* Reset packet state */
+                PKT_SET_STATE(pkt, PKT_STATE_START);/* Reset packet state */
                 if (b == PKT_STOP_BYTE) {
                     return pktVALID;        /* Packet fully valid, take data from it */
                 } else {

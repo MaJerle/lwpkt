@@ -36,11 +36,35 @@ main() {
     res = pkt_read(&pkt, &pkt_rx_rb);
 
     if (res == pktVALID) {
+        size_t len;
+
+        /* Packet is valid */
+        printf("Packet is valid!\r\n");
+
+        /* Print debug messages for packet */
+        printf("Packet from: 0x%02X\r\n", (unsigned)pkt_get_from_addr(&pkt));
+        printf("Packet to: 0x%02X\r\n", (unsigned)pkt_get_to_addr(&pkt));
+        printf("Packet cmd: 0x%02X\r\n", (unsigned)pkt_get_cmd(&pkt));
+        printf("Packet data length: 0x%02X\r\n", (unsigned)pkt_get_data_len(&pkt));
+        if ((len = pkt_get_data_len(&pkt)) > 0) {
+            uint8_t* d = pkt_get_data(&pkt);
+            printf("Packet data: ");
+            for (size_t i = 0; i < len; ++i) {
+                printf("0x%02X ", (unsigned)d[i]);
+            }
+            printf("\r\n");
+        }
+
+        /* Check who should be dedicated receiver */
         if (pkt_is_for_me(&pkt)) {
             printf("Packet is for me\r\n");
+        } else if (pkt_is_broadcast(&pkt)) {
+            printf("Packet is broadcast to all devices\r\n");
         } else {
-            printf("Packet is for device ID: %02X\r\n", (unsigned)pkt_get_to_addr(&pkt));
+            printf("Packet is for device ID: 0x%02X\r\n", (unsigned)pkt_get_to_addr(&pkt));
         }
+    } else {
+        printf("Packet is not valid!\r\n");
     }
 
     return 0;

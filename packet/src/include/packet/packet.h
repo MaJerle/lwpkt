@@ -48,19 +48,32 @@ extern "C" {
  * \{
  */
 
+/**
+ * \brief           Maximum length of `data` part of the packet in units of bytes
+ */
 #ifndef PKT_MAX_DATA_LEN
-#define PKT_MAX_DATA_LEN                256
+#define PKT_MAX_DATA_LEN                        256
 #endif
 
+/**
+ * \brief           Address identifying broadcast message to all devices
+ */
+#ifndef PKT_ADDR_BROADCAST
+#define PKT_ADDR_BROADCAST                      0xFF
+#endif
+
+/**
+ * \brief           Packet state enumeration
+ */
 typedef enum {
-    PKT_STATE_START = 0x00,
-    PKT_STATE_FROM,
-    PKT_STATE_TO,
-    PKT_STATE_CMD,
-    PKT_STATE_LEN,
-    PKT_STATE_DATA,
-    PKT_STATE_CRC,
-    PKT_STATE_STOP,
+    PKT_STATE_START = 0x00,                     /*!< Packet waits for start byte */
+    PKT_STATE_FROM,                             /*!< Packet waits for "packet from" byte */
+    PKT_STATE_TO,                               /*!< Packet waits for "packet to" byte */
+    PKT_STATE_CMD,                              /*!< Packet waits for "packet cmd" byte */
+    PKT_STATE_LEN,                              /*!< Packet waits for (multiple) data length bytes */
+    PKT_STATE_DATA,                             /*!< Packet waits for actual data bytes */
+    PKT_STATE_CRC,                              /*!< Packet waits for CRC data */
+    PKT_STATE_STOP,                             /*!< Packet waits for stop byte */
 } pkt_state_t;
 
 /**
@@ -108,12 +121,13 @@ pktr_t  pkt_read(pkt_t* pkt, RINGBUFF_VOLATILE ringbuff_t* rx_rb);
 pktr_t  pkt_write(pkt_t* pkt, RINGBUFF_VOLATILE ringbuff_t* tx_rb, uint8_t to, uint8_t cmd, const void* data, size_t len);
 pktr_t  pkt_reset(pkt_t* pkt);
 
-#define pkt_get_from_addr(pkt)              ((pkt)->m.from)
-#define pkt_get_to_addr(pkt)                ((pkt)->m.to)
-#define pkt_get_data(pkt)                   ((pkt)->data)
-#define pkt_get_data_len(pkt)               ((pkt)->m.len)
-#define pkt_get_cmd(pkt)                    ((pkt)->m.cmd)
-#define pkt_is_for_me(pkt)                  ((pkt)->m.to == (pkt)->addr)
+#define pkt_get_from_addr(pkt)              (uint8_t)   (((pkt) != NULL) ? ((pkt)->m.from) : 0)
+#define pkt_get_to_addr(pkt)                (uint8_t)   (((pkt) != NULL) ? ((pkt)->m.to) : 0)
+#define pkt_get_data_len(pkt)               (size_t)    (((pkt) != NULL) ? ((pkt)->m.len) : 0)
+#define pkt_get_data(pkt)                   (void *)    (((pkt) != NULL) ? ((pkt)->data) : NULL)
+#define pkt_get_cmd(pkt)                    (uint8_t)   (((pkt) != NULL) ? ((pkt)->m.cmd) : 0)
+#define pkt_is_for_me(pkt)                  (((pkt) != NULL) ? ((pkt)->m.to == (pkt)->addr) : 0)
+#define pkt_is_broadcast(pkt)               (((pkt) != NULL) ? ((pkt)->m.to == PKT_ADDR_BROADCAST) : 0)
 
 /**
  * \}
