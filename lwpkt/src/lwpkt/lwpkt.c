@@ -1,6 +1,6 @@
 /**
- * \file            packet.c
- * \brief           Packet protocol manager
+ * \file            lwpkt.c
+ * \brief           Lightweight packet protocol
  */
 
 /*
@@ -32,15 +32,15 @@
  * Version:         $_version_$
  */
 #include <string.h>
-#include "packet/packet.h"
+#include "lwpkt/lwpkt.h"
 
-#define PKT_IS_VALID(p)             ((p) != NULL)
-#define PKT_SET_STATE(p, s)         do { (p)->m.state = (s); (p)->m.index = 0; } while (0)
-#define PKT_RESET(p)                do { memset(&(p)->m, 0x00, sizeof((p)->m)); (p)->m.state = PKT_STATE_START; } while (0)
+#define LWPKT_IS_VALID(p)           ((p) != NULL)
+#define LWPKT_SET_STATE(p, s)       do { (p)->m.state = (s); (p)->m.index = 0; } while (0)
+#define LWPKT_RESET(p)              do { memset(&(p)->m, 0x00, sizeof((p)->m)); (p)->m.state = LWPKT_STATE_START; } while (0)
 
 /* Start and STOP bytes definition */
-#define PKT_START_BYTE              0xAA
-#define PKT_STOP_BYTE               0x55
+#define LWPKT_START_BYTE            0xAA
+#define LWPKT_STOP_BYTE             0x55
 
 /**
  * \brief           Add new value to CRC instance
@@ -50,7 +50,7 @@
  * \return          Current CRC calculated value after all bytes or `0` on error input data
  */
 static uint8_t
-crc_in(pkt_crc_t* c, const void* in, const size_t len) {
+prv_crc_in(lwpkt_crc_t* c, const void* in, const size_t len) {
     const uint8_t* d = in;
 
     if (c == NULL || in == NULL || len == 0) {
@@ -76,7 +76,7 @@ crc_in(pkt_crc_t* c, const void* in, const size_t len) {
  * \param[in]       crc: CRC instance
  */
 static void
-crc_init(pkt_crc_t* c) {
+prv_crc_init(lwpkt_crc_t* c) {
     memset(c, 0x00, sizeof(*c));
 }
 
@@ -84,130 +84,130 @@ crc_init(pkt_crc_t* c) {
  * \brief           Initialize packet instance and set device address
  * \param[in]       pkt: Packet instance
  * \param[in]       addr: Current device address
- * \return          \ref pktOK on success, member of \ref pktr_t otherwise
+ * \return          \ref lwpktOK on success, member of \ref lwpktr_t otherwise
  */
-pktr_t
-pkt_init(pkt_t* pkt, uint8_t addr) {
+lwpktr_t
+lwpkt_init(lwpkt_t* pkt, uint8_t addr) {
     if (pkt == NULL) {
-        return pktERR;
+        return lwpktERR;
     }
-    
+
     memset(pkt, 0x00, sizeof(*pkt));
     pkt->addr = addr;
 
-    PKT_RESET(pkt);
+    LWPKT_RESET(pkt);
 
-    return pktOK;
+    return lwpktOK;
 }
 
 /**
  * \brief           Set device address for packet instance
  * \param[in]       pkt: Packet instance
  * \param[in]       addr: New device address
- * \return          \ref pktOK on success, member of \ref pktr_t otherwise
+ * \return          \ref lwpktOK on success, member of \ref lwpktr_t otherwise
  */
-pktr_t
-pkt_set_addr(pkt_t* pkt, uint8_t addr) {
-    if (!PKT_IS_VALID(pkt)) {
-        return pktERR;
+lwpktr_t
+lwpkt_set_addr(lwpkt_t* pkt, uint8_t addr) {
+    if (!LWPKT_IS_VALID(pkt)) {
+        return lwpktERR;
     }
 
     pkt->addr = addr;
 
-    return pktOK;
+    return lwpktOK;
 }
 
 /**
  * \brief           Read raw data from RX buffer and prepare packet
  * \param[in]       pkt: Packet instance
  * \param[in]       rx_rb: RX ringbuffer to read received data from
- * \return          \ref pktVALID when packet valid, member of \ref pktr_t otherwise
+ * \return          \ref pktVALID when packet valid, member of \ref lwpktr_t otherwise
  */
-pktr_t
-pkt_read(pkt_t* pkt, RINGBUFF_VOLATILE ringbuff_t* rx_rb) {
+lwpktr_t
+lwpkt_read(lwpkt_t* pkt, LWRB_VOLATILE lwrb_t* rx_rb) {
     uint8_t b;
-    if (!PKT_IS_VALID(pkt)) {
-        return pktERR;
+    if (!LWPKT_IS_VALID(pkt)) {
+        return lwpktERR;
     }
 
     /* Process bytes from RX ringbuffer */
     /* Read byte by byte and go through state machine */
-    while (ringbuff_read(rx_rb, &b, 1) == 1) {
+    while (lwrb_read(rx_rb, &b, 1) == 1) {
         switch (pkt->m.state) {
-            case PKT_STATE_START: {
-                if (b == PKT_START_BYTE) {
-                    crc_init(&pkt->m.crc);
-                    PKT_SET_STATE(pkt, PKT_STATE_FROM);
+            case LWPKT_STATE_START: {
+                if (b == LWPKT_START_BYTE) {
+                    prv_crc_init(&pkt->m.crc);
+                    LWPKT_SET_STATE(pkt, LWPKT_STATE_FROM);
                 }
                 break;
             }
-            case PKT_STATE_FROM: {
+            case LWPKT_STATE_FROM: {
                 pkt->m.from = b;
-                crc_in(&pkt->m.crc, &b, 1);
-                PKT_SET_STATE(pkt, PKT_STATE_TO);
+                prv_crc_in(&pkt->m.crc, &b, 1);
+                LWPKT_SET_STATE(pkt, LWPKT_STATE_TO);
                 break;
             }
-            case PKT_STATE_TO: {
+            case LWPKT_STATE_TO: {
                 pkt->m.to = b;
-                crc_in(&pkt->m.crc, &b, 1);
-                PKT_SET_STATE(pkt, PKT_STATE_CMD);
+                prv_crc_in(&pkt->m.crc, &b, 1);
+                LWPKT_SET_STATE(pkt, LWPKT_STATE_CMD);
                 break;
             }
-            case PKT_STATE_CMD: {
+            case LWPKT_STATE_CMD: {
                 pkt->m.cmd = b;
-                crc_in(&pkt->m.crc, &b, 1);
-                PKT_SET_STATE(pkt, PKT_STATE_LEN);
+                prv_crc_in(&pkt->m.crc, &b, 1);
+                LWPKT_SET_STATE(pkt, LWPKT_STATE_LEN);
                 break;
             }
-            case PKT_STATE_LEN: {
+            case LWPKT_STATE_LEN: {
                 pkt->m.len |= (b & 0x7F) << ((size_t)7 * (size_t)pkt->m.index);
                 ++pkt->m.index;
-                crc_in(&pkt->m.crc, &b, 1);
-                
+                prv_crc_in(&pkt->m.crc, &b, 1);
+
                 /* Last length bytes has MSB bit set to 0 */
                 if ((b & 0x80) == 0x00) {
                     if (pkt->m.len == 0) {
-                        PKT_SET_STATE(pkt, PKT_STATE_CRC);
+                        LWPKT_SET_STATE(pkt, LWPKT_STATE_CRC);
                     } else {
-                        PKT_SET_STATE(pkt, PKT_STATE_DATA);
+                        LWPKT_SET_STATE(pkt, LWPKT_STATE_DATA);
                     }
                 }
                 break;
             }
-            case PKT_STATE_DATA: {
+            case LWPKT_STATE_DATA: {
                 pkt->data[pkt->m.index] = b;
                 ++pkt->m.index;
-                crc_in(&pkt->m.crc, &b, 1);
+                prv_crc_in(&pkt->m.crc, &b, 1);
                 if (pkt->m.index == pkt->m.len) {
-                    PKT_SET_STATE(pkt, PKT_STATE_CRC);
+                    LWPKT_SET_STATE(pkt, LWPKT_STATE_CRC);
                 }
                 break;
             }
-            case PKT_STATE_CRC: {
-                crc_in(&pkt->m.crc, &b, 1);
+            case LWPKT_STATE_CRC: {
+                prv_crc_in(&pkt->m.crc, &b, 1);
                 if (pkt->m.crc.crc == 0x00) {
-                    PKT_SET_STATE(pkt, PKT_STATE_STOP);
+                    LWPKT_SET_STATE(pkt, LWPKT_STATE_STOP);
                 } else {
-                    PKT_RESET(pkt);
-                    return pktERRCRC;
+                    LWPKT_RESET(pkt);
+                    return lwpktERRCRC;
                 }
-                PKT_SET_STATE(pkt, PKT_STATE_STOP);
+                LWPKT_SET_STATE(pkt, LWPKT_STATE_STOP);
                 break;
             }
-            case PKT_STATE_STOP: {
-                PKT_SET_STATE(pkt, PKT_STATE_START);/* Reset packet state */
-                if (b == PKT_STOP_BYTE) {
-                    return pktVALID;        /* Packet fully valid, take data from it */
+            case LWPKT_STATE_STOP: {
+                LWPKT_SET_STATE(pkt, LWPKT_STATE_START);  /* Reset packet state */
+                if (b == LWPKT_STOP_BYTE) {
+                    return lwpktVALID;      /* Packet fully valid, take data from it */
                 } else {
-                    return pktERRSTOP;      /* Packet is missin STOP byte! */
+                    return lwpktERRSTOP;    /* Packet is missin STOP byte! */
                 }
             }
         }
     }
-    if (pkt->m.state == PKT_STATE_START) {
-        return pktWAITDATA;
+    if (pkt->m.state == LWPKT_STATE_START) {
+        return lwpktWAITDATA;
     }
-    return pktINPROG;
+    return lwpktINPROG;
 }
 
 /**
@@ -218,72 +218,72 @@ pkt_read(pkt_t* pkt, RINGBUFF_VOLATILE ringbuff_t* rx_rb) {
  * \param[in]       cmd: Packet command
  * \param[in]       data: Pointer to input data. Set to `NULL` if not used
  * \param[in]       len: Length of input data. Must be set to `0` if `data == NULL`
- * \return          \ref pktOK on success, member of \ref pktr_t otherwise
+ * \return          \ref lwpktOK on success, member of \ref lwpktr_t otherwise
  */
-pktr_t
-pkt_write(pkt_t* pkt, RINGBUFF_VOLATILE ringbuff_t* tx_rb, uint8_t to_addr,
-            uint8_t cmd, const void* data, size_t len) {
-    pkt_crc_t crc;
+lwpktr_t
+lwpkt_write(lwpkt_t* pkt, LWRB_VOLATILE lwrb_t* tx_rb, uint8_t to_addr,
+          uint8_t cmd, const void* data, size_t len) {
+    lwpkt_crc_t crc;
     size_t org_len = len;
     uint8_t b;
 
-    if (!PKT_IS_VALID(pkt)) {
-        return pktERR;
+    if (!LWPKT_IS_VALID(pkt)) {
+        return lwpktERR;
     }
 
-    crc_init(&crc);                             /* Reset CRC instance */
+    prv_crc_init(&crc);
 
     /* Start byte */
-    b = PKT_START_BYTE;
-    ringbuff_write(tx_rb, &b, 1);
+    b = LWPKT_START_BYTE;
+    lwrb_write(tx_rb, &b, 1);
 
     /* From address */
-    ringbuff_write(tx_rb, &pkt->addr, 1);
-    crc_in(&crc, &pkt->addr, 1);
+    lwrb_write(tx_rb, &pkt->addr, 1);
+    prv_crc_in(&crc, &pkt->addr, 1);
 
     /* To address */
     b = to_addr;
-    ringbuff_write(tx_rb, &b, 1);
-    crc_in(&crc, &b, 1);
+    lwrb_write(tx_rb, &b, 1);
+    prv_crc_in(&crc, &b, 1);
 
     /* CMD byte */
     b = cmd;
-    ringbuff_write(tx_rb, &b, 1);
-    crc_in(&crc, &b, 1);
+    lwrb_write(tx_rb, &b, 1);
+    prv_crc_in(&crc, &b, 1);
 
     /* Length bytes */
     do {
         b = (len & 0x7F) | (len > 0x7F ? 0x80 : 0x00);
-        ringbuff_write(tx_rb, &b, 1);
-        crc_in(&crc, &b, 1);
+        lwrb_write(tx_rb, &b, 1);
+        prv_crc_in(&crc, &b, 1);
         len >>= 7;
     } while (len > 0);
 
     /* Data bytes */
     if (org_len > 0) {
-        ringbuff_write(tx_rb, data, org_len);
-        crc_in(&crc, data, org_len);
+        lwrb_write(tx_rb, data, org_len);
+        prv_crc_in(&crc, data, org_len);
     }
 
     /* CRC byte */
-    ringbuff_write(tx_rb, &crc.crc, 1);
+    lwrb_write(tx_rb, &crc.crc, 1);
 
     /* Stop byte */
-    b = PKT_STOP_BYTE;
-    ringbuff_write(tx_rb, &b, 1);
+    b = LWPKT_STOP_BYTE;
+    lwrb_write(tx_rb, &b, 1);
 
-    return pktOK;
+    return lwpktOK;
 }
 
 /**
  * \brief           Reset packet state
  * \param[in]       pkt: Packet instance
  */
-pktr_t
-pkt_reset(pkt_t* pkt) {
-    if (!PKT_IS_VALID(pkt)) {
-        return pktERR;
+lwpktr_t
+lwpkt_reset(lwpkt_t* pkt) {
+    if (!LWPKT_IS_VALID(pkt)) {
+        return lwpktERR;
     }
-    PKT_RESET(pkt);
-    return pktOK;
+    LWPKT_RESET(pkt);
+    return lwpktOK;
 }
