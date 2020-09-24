@@ -195,11 +195,11 @@ lwpkt_read(lwpkt_t* pkt, LWRB_VOLATILE lwrb_t* rx_rb) {
                 break;
             }
             case LWPKT_STATE_STOP: {
-                LWPKT_SET_STATE(pkt, LWPKT_STATE_START);  /* Reset packet state */
+                LWPKT_SET_STATE(pkt, LWPKT_STATE_START);/* Reset packet state */
                 if (b == LWPKT_STOP_BYTE) {
-                    return lwpktVALID;      /* Packet fully valid, take data from it */
+                    return lwpktVALID;          /* Packet fully valid, take data from it */
                 } else {
-                    return lwpktERRSTOP;    /* Packet is missin STOP byte! */
+                    return lwpktERRSTOP;        /* Packet is missin STOP byte! */
                 }
             }
         }
