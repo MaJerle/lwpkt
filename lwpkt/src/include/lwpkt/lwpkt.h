@@ -37,6 +37,7 @@
 #include <string.h>
 #include <stdint.h>
 #include "lwrb/lwrb.h"
+#include "lwpkt/lwpkt_opt.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -49,30 +50,22 @@ extern "C" {
  */
 
 /**
- * \brief           Maximum length of `data` part of the packet in units of bytes
- */
-#ifndef LWPKT_MAX_DATA_LEN
-#define LWPKT_MAX_DATA_LEN                        256
-#endif
-
-/**
- * \brief           Address identifying broadcast message to all devices
- */
-#ifndef LWPKT_ADDR_BROADCAST
-#define LWPKT_ADDR_BROADCAST                      0xFF
-#endif
-
-/**
  * \brief           Packet state enumeration
  */
 typedef enum {
     LWPKT_STATE_START = 0x00,                   /*!< Packet waits for start byte */
+#if LWPKT_CFG_USE_ADDR || __DOXYGEN__
     LWPKT_STATE_FROM,                           /*!< Packet waits for "packet from" byte */
     LWPKT_STATE_TO,                             /*!< Packet waits for "packet to" byte */
+#endif /* LWPKT_CFG_USE_ADDR || __DOXYGEN__ */
+#if LWPKT_CFG_USE_CMD || __DOXYGEN__
     LWPKT_STATE_CMD,                            /*!< Packet waits for "packet cmd" byte */
+#endif /* LWPKT_CFG_USE_CMD || __DOXYGEN__ */
     LWPKT_STATE_LEN,                            /*!< Packet waits for (multiple) data length bytes */
     LWPKT_STATE_DATA,                           /*!< Packet waits for actual data bytes */
+#if LWPKT_CFG_USE_CRC || __DOXYGEN__
     LWPKT_STATE_CRC,                            /*!< Packet waits for CRC data */
+#endif /* LWPKT_CFG_USE_CRC || __DOXYGEN__ */
     LWPKT_STATE_STOP,                           /*!< Packet waits for stop byte */
 } lwpkt_state_t;
 
@@ -100,24 +93,39 @@ typedef struct {
  * \brief           Packet structure
  */
 typedef struct {
-    uint8_t addr;                               /* Current device address */
-    uint8_t data[LWPKT_MAX_DATA_LEN];           /* Memory to write received data */
+#if LWPKT_CFG_USE_ADDR || __DOXYGEN__
+    uint8_t addr;                               /*!< Current device address */
+#endif /* LWPKT_CFG_USE_ADDR || __DOXYGEN__ */
+    uint8_t data[LWPKT_CFG_MAX_DATA_LEN];       /*!< Memory to write received data */
 
     struct {
         lwpkt_state_t state;                    /*!< Actual packet state machine */
+#if LWPKT_CFG_USE_CRC || __DOXYGEN__
         lwpkt_crc_t crc;                        /*!< Packet CRC byte */
+#endif /* LWPKT_CFG_USE_CRC || __DOXYGEN__ */
+#if LWPKT_CFG_USE_ADDR || __DOXYGEN__
         uint8_t from;                           /*!< Device address packet is coming from */
         uint8_t to;                             /*!< Device address packet is intended for */
+#endif /* LWPKT_CFG_USE_ADDR || __DOXYGEN__ */
+#if LWPKT_CFG_USE_CMD || __DOXYGEN__
         uint8_t cmd;                            /*!< Command packet */
+#endif /* LWPKT_CFG_USE_CMD || __DOXYGEN__ */
         size_t len;                             /*!< Number of bytes to receive */
         size_t index;                           /*!< General index variable for multi-byte parts of packet */
     } m;                                        /*!< Module that is periodically reset for next packet */
 } lwpkt_t;
 
-lwpktr_t  lwpkt_init(lwpkt_t* pkt, uint8_t addr);
+lwpktr_t  lwpkt_init(lwpkt_t* pkt);
 lwpktr_t  lwpkt_set_addr(lwpkt_t* pkt, uint8_t addr);
 lwpktr_t  lwpkt_read(lwpkt_t* pkt, LWRB_VOLATILE lwrb_t* rx_rb);
-lwpktr_t  lwpkt_write(lwpkt_t* pkt, LWRB_VOLATILE lwrb_t* tx_rb, uint8_t to, uint8_t cmd, const void* data, size_t len);
+lwpktr_t  lwpkt_write(lwpkt_t* pkt, LWRB_VOLATILE lwrb_t* tx_rb,
+#if LWPKT_CFG_USE_ADDR || __DOXYGEN__
+    uint8_t to,
+#endif /* LWPKT_CFG_USE_ADDR || __DOXYGEN__ */
+#if LWPKT_CFG_USE_CMD || __DOXYGEN__
+    uint8_t cmd, 
+#endif /* LWPKT_CFG_USE_CMD || __DOXYGEN__ */
+    const void* data, size_t len);
 lwpktr_t  lwpkt_reset(lwpkt_t* pkt);
 
 #define lwpkt_get_from_addr(pkt)            (uint8_t)   (((pkt) != NULL) ? ((pkt)->m.from) : 0)
@@ -126,7 +134,7 @@ lwpktr_t  lwpkt_reset(lwpkt_t* pkt);
 #define lwpkt_get_data(pkt)                 (void *)    (((pkt) != NULL) ? ((pkt)->data) : NULL)
 #define lwpkt_get_cmd(pkt)                  (uint8_t)   (((pkt) != NULL) ? ((pkt)->m.cmd) : 0)
 #define lwpkt_is_for_me(pkt)                (((pkt) != NULL) ? ((pkt)->m.to == (pkt)->addr) : 0)
-#define lwpkt_is_broadcast(pkt)             (((pkt) != NULL) ? ((pkt)->m.to == LWPKT_ADDR_BROADCAST) : 0)
+#define lwpkt_is_broadcast(pkt)             (((pkt) != NULL) ? ((pkt)->m.to == LWPKT_CFG_ADDR_BROADCAST) : 0)
 
 /**
  * \}
