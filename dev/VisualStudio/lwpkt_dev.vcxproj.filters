@@ -21,10 +21,10 @@
     <ClCompile Include="main.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\packet\src\packet\packet.c">
+    <ClCompile Include="..\..\libs\lwrb\src\lwrb\lwrb.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\libs\ringbuff\ringbuff\src\ringbuff\ringbuff.c">
+    <ClCompile Include="..\..\lwpkt\src\lwpkt\lwpkt.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
