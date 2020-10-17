@@ -16,16 +16,18 @@ main() {
     lwpktr_t res;
     uint8_t b;
 
-    /* Initialize packet and its buffers with default address */
-    lwpkt_init(&pkt);
-#if LWPKT_CFG_USE_ADDR
-    lwpkt_set_addr(&pkt, 0x12);
-#endif /* LWPKT_CFG_USE_ADDR */
+    /* Initialize buffers for packet protocol, for TX and RX */
     lwrb_init(&pkt_tx_rb, pkt_tx_rb_data, sizeof(pkt_tx_rb_data));
     lwrb_init(&pkt_rx_rb, pkt_rx_rb_data, sizeof(pkt_rx_rb_data));
 
+    /* Initialize packet and its buffers with default address */
+    lwpkt_init(&pkt, &pkt_tx_rb, &pkt_rx_rb);
+#if LWPKT_CFG_USE_ADDR
+    lwpkt_set_addr(&pkt, 0x12);
+#endif /* LWPKT_CFG_USE_ADDR */
+
     /* Write packet data to TX ringbuff... */
-    res = lwpkt_write(&pkt, &pkt_tx_rb,
+    res = lwpkt_write(&pkt,
 #if LWPKT_CFG_USE_ADDR
         0x11,
 #endif /* LWPKT_CFG_USE_ADDR */
@@ -43,7 +45,7 @@ main() {
     }
 
     /* Read data from RX ringbuffer */
-    res = lwpkt_read(&pkt, &pkt_rx_rb);
+    res = lwpkt_read(&pkt);
 
     if (res == lwpktVALID) {
         size_t len;

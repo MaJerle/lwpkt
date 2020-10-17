@@ -97,6 +97,8 @@ typedef struct {
     uint8_t addr;                               /*!< Current device address */
 #endif /* LWPKT_CFG_USE_ADDR || __DOXYGEN__ */
     uint8_t data[LWPKT_CFG_MAX_DATA_LEN];       /*!< Memory to write received data */
+    LWRB_VOLATILE lwrb_t* tx_rb;                /*!< TX ringbuffer */
+    LWRB_VOLATILE lwrb_t* rx_rb;                /*!< RX ringbuffer */
 
     struct {
         lwpkt_state_t state;                    /*!< Actual packet state machine */
@@ -115,10 +117,10 @@ typedef struct {
     } m;                                        /*!< Module that is periodically reset for next packet */
 } lwpkt_t;
 
-lwpktr_t  lwpkt_init(lwpkt_t* pkt);
+lwpktr_t  lwpkt_init(lwpkt_t* pkt, LWRB_VOLATILE lwrb_t* tx_rb, LWRB_VOLATILE lwrb_t* rx_rb);
 lwpktr_t  lwpkt_set_addr(lwpkt_t* pkt, uint8_t addr);
-lwpktr_t  lwpkt_read(lwpkt_t* pkt, LWRB_VOLATILE lwrb_t* rx_rb);
-lwpktr_t  lwpkt_write(lwpkt_t* pkt, LWRB_VOLATILE lwrb_t* tx_rb,
+lwpktr_t  lwpkt_read(lwpkt_t* pkt);
+lwpktr_t  lwpkt_write(lwpkt_t* pkt,
 #if LWPKT_CFG_USE_ADDR || __DOXYGEN__
     uint8_t to,
 #endif /* LWPKT_CFG_USE_ADDR || __DOXYGEN__ */

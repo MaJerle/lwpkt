@@ -96,16 +96,21 @@ prv_crc_init(lwpkt_crc_t* c) {
 /**
  * \brief           Initialize packet instance and set device address
  * \param[in]       pkt: Packet instance
+ * \param[in]       tx_rb: TX LwRB instance for data write
+ * \param[in]       rx_rb: RX LwRB instance for data read
  * \return          \ref lwpktOK on success, member of \ref lwpktr_t otherwise
  */
 lwpktr_t
-lwpkt_init(lwpkt_t* pkt) {
+lwpkt_init(lwpkt_t* pkt, LWRB_VOLATILE lwrb_t* tx_rb, LWRB_VOLATILE lwrb_t* rx_rb) {
     if (pkt == NULL) {
         return lwpktERR;
     }
 
     memset(pkt, 0x00, sizeof(*pkt));
     LWPKT_RESET(pkt);
+
+    pkt->tx_rb = tx_rb;
+    pkt->rx_rb = rx_rb;
 
     return lwpktOK;
 }
@@ -137,7 +142,7 @@ lwpkt_set_addr(lwpkt_t* pkt, uint8_t addr) {
  * \return          \ref pktVALID when packet valid, member of \ref lwpktr_t otherwise
  */
 lwpktr_t
-lwpkt_read(lwpkt_t* pkt, LWRB_VOLATILE lwrb_t* rx_rb) {
+lwpkt_read(lwpkt_t* pkt) {
     uint8_t b;
     if (!LWPKT_IS_VALID(pkt)) {
         return lwpktERR;
@@ -145,7 +150,7 @@ lwpkt_read(lwpkt_t* pkt, LWRB_VOLATILE lwrb_t* rx_rb) {
 
     /* Process bytes from RX ringbuffer */
     /* Read byte by byte and go through state machine */
-    while (lwrb_read(rx_rb, &b, 1) == 1) {
+    while (lwrb_read(pkt->rx_rb, &b, 1) == 1) {
         switch (pkt->m.state) {
             case LWPKT_STATE_START: {
                 if (b == LWPKT_START_BYTE) {
@@ -270,7 +275,7 @@ lwpkt_read(lwpkt_t* pkt, LWRB_VOLATILE lwrb_t* rx_rb) {
  * \return          \ref lwpktOK on success, member of \ref lwpktr_t otherwise
  */
 lwpktr_t
-lwpkt_write(lwpkt_t* pkt, LWRB_VOLATILE lwrb_t* tx_rb, 
+lwpkt_write(lwpkt_t* pkt, 
 #if LWPKT_CFG_USE_ADDR || __DOXYGEN__
     uint8_t to,
 #endif /* LWPKT_CFG_USE_ADDR || __DOXYGEN__ */
@@ -294,39 +299,39 @@ lwpkt_write(lwpkt_t* pkt, LWRB_VOLATILE lwrb_t* tx_rb,
 
     /* Start byte */
     b = LWPKT_START_BYTE;
-    lwrb_write(tx_rb, &b, 1);
+    lwrb_write(pkt->tx_rb, &b, 1);
 
 #if LWPKT_CFG_USE_ADDR
     /* FROM and TO addresses */
-    WRITE_WITH_CRC(&crc, tx_rb, &pkt->addr, 1);
-    WRITE_WITH_CRC(&crc, tx_rb, &to, 1);
+    WRITE_WITH_CRC(&crc, pkt->tx_rb, &pkt->addr, 1);
+    WRITE_WITH_CRC(&crc, pkt->tx_rb, &to, 1);
 #endif /* LWPKT_CFG_USE_ADDR */
 
 #if LWPKT_CFG_USE_CMD
     /* CMD byte */
-    WRITE_WITH_CRC(&crc, tx_rb, &cmd, 1);
+    WRITE_WITH_CRC(&crc, pkt->tx_rb, &cmd, 1);
 #endif /* LWPKT_CFG_USE_CMD */
 
     /* Length bytes */
     do {
         b = (len & 0x7F) | (len > 0x7F ? 0x80 : 0x00);
-        WRITE_WITH_CRC(&crc, tx_rb, &b, 1);
+        WRITE_WITH_CRC(&crc, pkt->tx_rb, &b, 1);
         len >>= 7;
     } while (len > 0);
 
     /* Data bytes */
     if (org_len > 0) {
-        WRITE_WITH_CRC(&crc, tx_rb, data, org_len);
+        WRITE_WITH_CRC(&crc, pkt->tx_rb, data, org_len);
     }
 
 #if LWPKT_CFG_USE_CRC
     /* CRC byte */
-    lwrb_write(tx_rb, &crc.crc, 1);
+    lwrb_write(pkt->tx_rb, &crc.crc, 1);
 #endif /* LWPKT_CFG_USE_CRC */
 
     /* Stop byte */
     b = LWPKT_STOP_BYTE;
-    lwrb_write(tx_rb, &b, 1);
+    lwrb_write(pkt->tx_rb, &b, 1);
 
     return lwpktOK;
 }
