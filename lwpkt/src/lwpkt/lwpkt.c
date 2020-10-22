@@ -46,11 +46,11 @@
 #define WRITE_WITH_CRC(crc, tx_rb, b, len) do { \
     lwrb_write((tx_rb), (b), (len));            \
     prv_crc_in((crc), (b), (len));              \
-} while (0);                                    
+} while (0)
 #else
 #define WRITE_WITH_CRC(crc, tx_rb, b, len) do { \
     lwrb_write((tx_rb), (b), (len));            \
-} while (0);                                    
+} while (0)
 #endif /* LWPKT_CFG_USE_CRC */
 
 #if LWPKT_CFG_USE_CRC || __DOXYGEN__
@@ -154,6 +154,7 @@ lwpkt_read(lwpkt_t* pkt) {
         switch (pkt->m.state) {
             case LWPKT_STATE_START: {
                 if (b == LWPKT_START_BYTE) {
+                    LWPKT_RESET(pkt);           /* Reset instance and make it ready for receiving */
 #if LWPKT_CFG_USE_CRC
                     prv_crc_init(&pkt->m.crc);
 #endif /* LWPKT_CFG_USE_CRC */
