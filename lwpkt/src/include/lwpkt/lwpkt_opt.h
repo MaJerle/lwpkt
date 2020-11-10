@@ -93,6 +93,16 @@ extern "C" {
 #endif
 
 /**
+ * \brief           Defines timeout time before packet is considered as not valid
+ *                  when too long time in data-read mode
+ *
+ * Used with \ref lwpkt_process function
+ */
+#ifndef LWPKT_CFG_PROCESS_INPROG_TIMEOUT
+#define LWPKT_CFG_PROCESS_INPROG_TIMEOUT        100
+#endif
+
+/**
  * \}
  */
 

@@ -99,6 +99,7 @@ typedef struct {
     uint8_t data[LWPKT_CFG_MAX_DATA_LEN];       /*!< Memory to write received data */
     LWRB_VOLATILE lwrb_t* tx_rb;                /*!< TX ringbuffer */
     LWRB_VOLATILE lwrb_t* rx_rb;                /*!< RX ringbuffer */
+    uint32_t last_rx_time;                      /*!< Last RX time in units of milliseconds */
 
     struct {
         lwpkt_state_t state;                    /*!< Actual packet state machine */
@@ -117,10 +118,25 @@ typedef struct {
     } m;                                        /*!< Module that is periodically reset for next packet */
 } lwpkt_t;
 
-lwpktr_t  lwpkt_init(lwpkt_t* pkt, LWRB_VOLATILE lwrb_t* tx_rb, LWRB_VOLATILE lwrb_t* rx_rb);
-lwpktr_t  lwpkt_set_addr(lwpkt_t* pkt, uint8_t addr);
-lwpktr_t  lwpkt_read(lwpkt_t* pkt);
-lwpktr_t  lwpkt_write(lwpkt_t* pkt,
+/**
+ * \brief           List of event types
+ */
+typedef enum {
+    LWPKT_EVT_PKT,                              /*!< Valid packet ready to read */
+    LWPKT_EVT_TIMEOUT                           /*!< Timeout on packat, reset event */
+} lwpkt_evt_type_t;
+
+/**
+ * \brief           LwPKT event function
+ * \param[in]       pkt: LwPKT instance with valid packet
+ * \param[in]       type: Event type
+ */
+typedef void(*lwpkt_evt_fn)(lwpkt_t* pkt, lwpkt_evt_type_t type);
+
+lwpktr_t    lwpkt_init(lwpkt_t* pkt, LWRB_VOLATILE lwrb_t* tx_rb, LWRB_VOLATILE lwrb_t* rx_rb);
+lwpktr_t    lwpkt_set_addr(lwpkt_t* pkt, uint8_t addr);
+lwpktr_t    lwpkt_read(lwpkt_t* pkt);
+lwpktr_t    lwpkt_write(lwpkt_t* pkt,
 #if LWPKT_CFG_USE_ADDR || __DOXYGEN__
     uint8_t to,
 #endif /* LWPKT_CFG_USE_ADDR || __DOXYGEN__ */
@@ -128,7 +144,8 @@ lwpktr_t  lwpkt_write(lwpkt_t* pkt,
     uint8_t cmd, 
 #endif /* LWPKT_CFG_USE_CMD || __DOXYGEN__ */
     const void* data, size_t len);
-lwpktr_t  lwpkt_reset(lwpkt_t* pkt);
+lwpktr_t    lwpkt_reset(lwpkt_t* pkt);
+lwpktr_t    lwpkt_process(lwpkt_t* pkt, uint32_t time, lwpkt_evt_fn evt_fn);
 
 #define lwpkt_get_from_addr(pkt)            (uint8_t)   (((pkt) != NULL) ? ((pkt)->m.from) : 0)
 #define lwpkt_get_to_addr(pkt)              (uint8_t)   (((pkt) != NULL) ? ((pkt)->m.to) : 0)

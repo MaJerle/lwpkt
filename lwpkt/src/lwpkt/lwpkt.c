@@ -266,6 +266,40 @@ lwpkt_read(lwpkt_t* pkt) {
 }
 
 /**
+ * \brief           Process packet instance and read new data
+ * \param[in]       pkt: Packet instance
+ * \param[in]       time: Current time in units of milliseconds
+ * \param[in]       evt_fn: Event function to be called on events
+ * \return          \ref lwpktOK if processing OK, member of \ref lwpktr_t otherwise
+ */
+lwpktr_t
+lwpkt_process(lwpkt_t* pkt, uint32_t time, lwpkt_evt_fn evt_fn) {
+    lwpktr_t pktres;
+
+    if (pkt == NULL || evt_fn == NULL) {
+        return lwpktERR;
+    }
+
+    /* Packet protocol data read */
+    pktres = lwpkt_read(pkt);
+    if (pktres == lwpktVALID) {
+        pkt->last_rx_time = time;
+        if (evt_fn != NULL) {
+            evt_fn(pkt, LWPKT_EVT_PKT);
+        }
+    } else if (pktres == lwpktINPROG) {
+        if ((time - pkt->last_rx_time) >= LWPKT_CFG_PROCESS_INPROG_TIMEOUT) {
+            lwpkt_reset(pkt);
+            pkt->last_rx_time = time;
+            evt_fn(pkt, LWPKT_EVT_TIMEOUT);
+        }
+    } else {
+        pkt->last_rx_time = time;
+    }
+    return lwpktOK;
+}
+
+/**
  * \brief           Write packet data to TX ringbuffer
  * \param[in]       pkt: Packet instance
  * \param[in]       tx_rb: TX ringbuffer to write data to be transmitted afterwards
