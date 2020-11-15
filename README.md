@@ -1,15 +1,21 @@
 # Packet protocol manager
 
+<h3>Read first: <a href="http://docs.majerle.eu/projects/lwpkt/">Documentation</a></h3>
+
 ## Features
 
 * Written in ANSI C99, compatible with ``size_t`` for size data types
-* Implements simple protocol for (one target) RS-485 communication with multiple slaves
-* Variable number of length bytes available to support packet longer than `255` bytes
-* Supports CRC-8 integrity check
-* Uses ringbuffers for TX and RX data, gives application full autonomy for data transmit or receive
-* Supports manual packet state reset if timeout detected by application
-* Operating system ready, thread-safe API
+* Platform independent, no architecture specific code
+* Uses *LwRB* library for data read/write operations
+* Optimized for embedded systems, allows high optimization for data transfer
+* Configurable settings for packet structure and variable data length
+* Allows multiple notes in network with `from` and `to` addresses
+* Separate optional field for *command* data type
+* Variable data length to support theoretically unlimited packet length
+* CRC check to handle data transmission errors
 * User friendly MIT license
+
+https://docs.majerle.eu/projects/lwpkt/en/latest/
 
 ## Contribute
 
