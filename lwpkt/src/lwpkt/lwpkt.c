@@ -56,7 +56,7 @@
 #if LWPKT_CFG_USE_CRC || __DOXYGEN__
 /**
  * \brief           Add new value to CRC instance
- * \param[in]       crc: CRC instance
+ * \param[in]       c: CRC instance
  * \param[in]       in: Input data in byte format
  * \param[in]       len: Number of bytes to process
  * \return          Current CRC calculated value after all bytes or `0` on error input data
@@ -85,7 +85,7 @@ prv_crc_in(lwpkt_crc_t* c, const void* in, const size_t len) {
 
 /**
  * \brief           Initialize CRC instance to default values
- * \param[in]       crc: CRC instance
+ * \param[in]       c: CRC instance
  */
 static void
 prv_crc_init(lwpkt_crc_t* c) {
@@ -138,8 +138,7 @@ lwpkt_set_addr(lwpkt_t* pkt, uint8_t addr) {
 /**
  * \brief           Read raw data from RX buffer and prepare packet
  * \param[in]       pkt: Packet instance
- * \param[in]       rx_rb: RX ringbuffer to read received data from
- * \return          \ref pktVALID when packet valid, member of \ref lwpktr_t otherwise
+ * \return          \ref lwpktVALID when packet valid, member of \ref lwpktr_t otherwise
  */
 lwpktr_t
 lwpkt_read(lwpkt_t* pkt) {
@@ -302,7 +301,6 @@ lwpkt_process(lwpkt_t* pkt, uint32_t time, lwpkt_evt_fn evt_fn) {
 /**
  * \brief           Write packet data to TX ringbuffer
  * \param[in]       pkt: Packet instance
- * \param[in]       tx_rb: TX ringbuffer to write data to be transmitted afterwards
  * \param[in]       to: End device address
  * \param[in]       cmd: Packet command
  * \param[in]       data: Pointer to input data. Set to `NULL` if not used
@@ -374,6 +372,7 @@ lwpkt_write(lwpkt_t* pkt,
 /**
  * \brief           Reset packet state
  * \param[in]       pkt: Packet instance
+ * \return          \ref lwpktOK on success, member of \ref lwpktr_t otherwise
  */
 lwpktr_t
 lwpkt_reset(lwpkt_t* pkt) {
