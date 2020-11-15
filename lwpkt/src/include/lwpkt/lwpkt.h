@@ -86,7 +86,7 @@ typedef enum {
  * \brief           CRC structure for packet
  */
 typedef struct {
-    uint8_t crc;
+    uint8_t crc;                                /*!< Current CRC value */
 } lwpkt_crc_t;
 
 /**
@@ -147,12 +147,53 @@ lwpktr_t    lwpkt_write(lwpkt_t* pkt,
 lwpktr_t    lwpkt_reset(lwpkt_t* pkt);
 lwpktr_t    lwpkt_process(lwpkt_t* pkt, uint32_t time, lwpkt_evt_fn evt_fn);
 
+/**
+ * \brief           Get address from where packet was sent
+ * \param[in]       pkt: LwPKT instance
+ * \return          Address
+ */
 #define lwpkt_get_from_addr(pkt)            (uint8_t)   (((pkt) != NULL) ? ((pkt)->m.from) : 0)
+
+/**
+ * \brief           Get address to where packet was sent
+ * \param[in]       pkt: LwPKT instance
+ * \return          Address
+ */
 #define lwpkt_get_to_addr(pkt)              (uint8_t)   (((pkt) != NULL) ? ((pkt)->m.to) : 0)
+
+/**
+ * \brief           Get length of packet
+ * \param[in]       pkt: LwPKT instance
+ * \return          Number of data bytes in packet
+ */
 #define lwpkt_get_data_len(pkt)             (size_t)    (((pkt) != NULL) ? ((pkt)->m.len) : 0)
+
+/**
+ * \brief           Get pointer to packet data
+ * \param[in]       pkt: LwPKT instance
+ * \return          Pointer to data
+ */
 #define lwpkt_get_data(pkt)                 (void *)    (((pkt) != NULL) ? ((pkt)->data) : NULL)
+
+/**
+ * \brief           Get packet command data field
+ * \param[in]       pkt: LwPKT instance
+ * \return          Command data field
+ */
 #define lwpkt_get_cmd(pkt)                  (uint8_t)   (((pkt) != NULL) ? ((pkt)->m.cmd) : 0)
+
+/**
+ * \brief           Check if packet `to` field address matches device address
+ * \param[in]       pkt: LwPKT instance
+ * \return          `1` on success, `0` otherwise
+ */
 #define lwpkt_is_for_me(pkt)                (((pkt) != NULL) ? ((pkt)->m.to == (pkt)->addr) : 0)
+
+/**
+ * \brief           Check if packet was sent to all devices on network
+ * \param[in]       pkt: LwPKT instance
+ * \return          `1` if broadcast, `0` otherwise
+ */
 #define lwpkt_is_broadcast(pkt)             (((pkt) != NULL) ? ((pkt)->m.to == LWPKT_CFG_ADDR_BROADCAST) : 0)
 
 /**

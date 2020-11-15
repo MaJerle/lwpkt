@@ -143,6 +143,8 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\examples\example_lwpkt.c" />
+    <ClCompile Include="..\..\examples\example_lwpkt_evt.c" />
     <ClCompile Include="..\..\libs\lwrb\src\lwrb\lwrb.c" />
     <ClCompile Include="..\..\lwpkt\src\lwpkt\lwpkt.c" />
     <ClCompile Include="main.c" />

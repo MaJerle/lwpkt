@@ -27,5 +27,11 @@
     <ClCompile Include="..\..\lwpkt\src\lwpkt\lwpkt.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\examples\example_lwpkt.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\examples\example_lwpkt_evt.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
