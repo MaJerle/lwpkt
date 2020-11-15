@@ -29,7 +29,7 @@
  * This file is part of LwPKT - Lightweight packet protocol library.
  *
  * Author:          Tilen MAJERLE <tilen@majerle.eu>
- * Version:         $_version_$
+ * Version:         v1.0.0
  */
 #ifndef LWPKT_HDR_H
 #define LWPKT_HDR_H
@@ -141,7 +141,7 @@ lwpktr_t    lwpkt_write(lwpkt_t* pkt,
     uint8_t to,
 #endif /* LWPKT_CFG_USE_ADDR || __DOXYGEN__ */
 #if LWPKT_CFG_USE_CMD || __DOXYGEN__
-    uint8_t cmd, 
+    uint8_t cmd,
 #endif /* LWPKT_CFG_USE_CMD || __DOXYGEN__ */
     const void* data, size_t len);
 lwpktr_t    lwpkt_reset(lwpkt_t* pkt);

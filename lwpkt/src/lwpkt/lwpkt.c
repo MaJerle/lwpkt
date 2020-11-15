@@ -29,7 +29,7 @@
  * This file is part of LwPKT - Lightweight packet protocol library.
  *
  * Author:          Tilen MAJERLE <tilen@majerle.eu>
- * Version:         $_version_$
+ * Version:         v1.0.0
  */
 #include <string.h>
 #include "lwpkt/lwpkt.h"
@@ -310,7 +310,7 @@ lwpkt_process(lwpkt_t* pkt, uint32_t time, lwpkt_evt_fn evt_fn) {
  * \return          \ref lwpktOK on success, member of \ref lwpktr_t otherwise
  */
 lwpktr_t
-lwpkt_write(lwpkt_t* pkt, 
+lwpkt_write(lwpkt_t* pkt,
 #if LWPKT_CFG_USE_ADDR || __DOXYGEN__
     uint8_t to,
 #endif /* LWPKT_CFG_USE_ADDR || __DOXYGEN__ */
