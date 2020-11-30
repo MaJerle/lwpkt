@@ -34,6 +34,9 @@
 #ifndef LWPKT_HDR_OPT_H
 #define LWPKT_HDR_OPT_H
 
+/* Uncomment to ignore user options (or set macro in compiler flags) */
+/* #define LWPKT_IGNORE_USER_OPTS */
+
 /* Include application options */
 #ifndef LWPKT_IGNORE_USER_OPTS
 #include "lwpkt_opts.h"
