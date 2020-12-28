@@ -29,7 +29,7 @@
  * This file is part of LwPKT - Lightweight packet protocol library.
  *
  * Author:          Tilen MAJERLE <tilen@majerle.eu>
- * Version:         v1.0.1
+ * Version:         v1.1.0
  */
 #ifndef LWPKT_HDR_OPT_H
 #define LWPKT_HDR_OPT_H
@@ -90,7 +90,7 @@ extern "C" {
  */
 #ifndef LWPKT_CFG_ADDR_EXTENDED
 #define LWPKT_CFG_ADDR_EXTENDED                 0
-#endif 
+#endif
 
 /**
  * \brief           Enables `1` or disables `0` `cmd` field in the protocol.

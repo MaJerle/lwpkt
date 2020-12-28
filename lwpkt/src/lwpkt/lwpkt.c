@@ -29,7 +29,7 @@
  * This file is part of LwPKT - Lightweight packet protocol library.
  *
  * Author:          Tilen MAJERLE <tilen@majerle.eu>
- * Version:         v1.0.1
+ * Version:         v1.1.0
  */
 #include <string.h>
 #include "lwpkt/lwpkt.h"
@@ -54,7 +54,7 @@
     lwrb_write((tx_rb), (b), (len));            \
 } while (0)
 #define ADD_IN_TO_CRC(val)
-#define INIT_CRC(val)               
+#define INIT_CRC(val)
 #endif /* LWPKT_CFG_USE_CRC */
 
 #if LWPKT_CFG_USE_CRC || __DOXYGEN__
