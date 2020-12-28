@@ -29,8 +29,8 @@ Packet structure consists of several fields, where some are optional and some ar
     Default packet structure
 
 * ``START``: Byte with fixed value to represent start of packet
-* ``FROM``: Byte from where this packet is coming from. Optional field, can be disabled with :c:macro:`LWPKT_CFG_USE_ADDR`
-* ``TO``: Byte to where this packet is targeting. Optional field, can be disabled with :c:macro:`LWPKT_CFG_USE_ADDR`
+* ``FROM``: Byte(s) from where this packet is coming from. Optional field, can be disabled with :c:macro:`LWPKT_CFG_USE_ADDR`
+* ``TO``: Byte(s) to where this packet is targeting. Optional field, can be disabled with :c:macro:`LWPKT_CFG_USE_ADDR`
 * ``CMD``: Byte with optional command field to better align with multiple packets. Optional field, can be disabled with :c:macro:`LWPKT_CFG_USE_CMD`
 * ``LEN``: Length of *data* part field. This is variable multi-byte length to support data length ``>= 256`` bytes. Always present
 * ``DATA``: Optional data field. Number of bytes is as in ``LEN`` field
@@ -50,6 +50,23 @@ It is up to application to implement how buffers are actually later written for 
 .. warning::
     LwPKT is platform independant and requires final application to actually take care of data being read/written from/to ringbuffers and
     transferred further over the network
+
+Variable data length
+********************
+
+Some fields implement variable data length feature, to optimize data transfer length.
+Currently supported fields are:
+
+* ``DATA`` field is always enabled
+* ``FROM`` and ``TO`` fields when :c:macro:`LWPKT_CFG_ADDR_EXTENDED` feature is enabled
+
+Variable data length is a feature that uses minimum number of bytes to transfer data.
+It uses ``7 LSB bits`` per byte for actual data, and ``MSB`` bit to indicate if there are more bytes coming after.
+For example, values between ``0x00 - 0x7F`` are codified within single byte, while values between ``0x80 - 0x3F`` require ``2`` bytes for transfer.
+To transfer ``32-bit`` variable, minimum ``1-byte`` and maximum ``5-bytes`` are used.
+
+.. tip ::
+    Data codification is always LSB Byte first.
 
 Event management
 ****************
