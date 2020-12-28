@@ -90,11 +90,20 @@ typedef struct {
 } lwpkt_crc_t;
 
 /**
+ * \brief           Device address data type
+ */
+#if LWPKT_CFG_ADDR_EXTENDED || __DOXYGEN__
+typedef uint32_t lwpkt_addr_t;
+#else
+typedef uint8_t lwpkt_addr_t;
+#endif /* LWPKT_CFG_ADDR_EXTENDED || __DOXYGEN__ */
+
+/**
  * \brief           Packet structure
  */
 typedef struct {
 #if LWPKT_CFG_USE_ADDR || __DOXYGEN__
-    uint8_t addr;                               /*!< Current device address */
+    lwpkt_addr_t addr;                          /*!< Current device address */
 #endif /* LWPKT_CFG_USE_ADDR || __DOXYGEN__ */
     uint8_t data[LWPKT_CFG_MAX_DATA_LEN];       /*!< Memory to write received data */
     LWRB_VOLATILE lwrb_t* tx_rb;                /*!< TX ringbuffer */
@@ -107,8 +116,8 @@ typedef struct {
         lwpkt_crc_t crc;                        /*!< Packet CRC byte */
 #endif /* LWPKT_CFG_USE_CRC || __DOXYGEN__ */
 #if LWPKT_CFG_USE_ADDR || __DOXYGEN__
-        uint8_t from;                           /*!< Device address packet is coming from */
-        uint8_t to;                             /*!< Device address packet is intended for */
+        lwpkt_addr_t from;                      /*!< Device address packet is coming from */
+        lwpkt_addr_t to;                        /*!< Device address packet is intended for */
 #endif /* LWPKT_CFG_USE_ADDR || __DOXYGEN__ */
 #if LWPKT_CFG_USE_CMD || __DOXYGEN__
         uint8_t cmd;                            /*!< Command packet */
@@ -134,11 +143,11 @@ typedef enum {
 typedef void(*lwpkt_evt_fn)(lwpkt_t* pkt, lwpkt_evt_type_t type);
 
 lwpktr_t    lwpkt_init(lwpkt_t* pkt, LWRB_VOLATILE lwrb_t* tx_rb, LWRB_VOLATILE lwrb_t* rx_rb);
-lwpktr_t    lwpkt_set_addr(lwpkt_t* pkt, uint8_t addr);
+lwpktr_t    lwpkt_set_addr(lwpkt_t* pkt, lwpkt_addr_t addr);
 lwpktr_t    lwpkt_read(lwpkt_t* pkt);
 lwpktr_t    lwpkt_write(lwpkt_t* pkt,
 #if LWPKT_CFG_USE_ADDR || __DOXYGEN__
-    uint8_t to,
+    lwpkt_addr_t to,
 #endif /* LWPKT_CFG_USE_ADDR || __DOXYGEN__ */
 #if LWPKT_CFG_USE_CMD || __DOXYGEN__
     uint8_t cmd,
@@ -152,14 +161,14 @@ lwpktr_t    lwpkt_process(lwpkt_t* pkt, uint32_t time, lwpkt_evt_fn evt_fn);
  * \param[in]       pkt: LwPKT instance
  * \return          Address
  */
-#define lwpkt_get_from_addr(pkt)            (uint8_t)   (((pkt) != NULL) ? ((pkt)->m.from) : 0)
+#define lwpkt_get_from_addr(pkt)            (lwpkt_addr_t)   (((pkt) != NULL) ? ((pkt)->m.from) : 0)
 
 /**
  * \brief           Get address to where packet was sent
  * \param[in]       pkt: LwPKT instance
  * \return          Address
  */
-#define lwpkt_get_to_addr(pkt)              (uint8_t)   (((pkt) != NULL) ? ((pkt)->m.to) : 0)
+#define lwpkt_get_to_addr(pkt)              (lwpkt_addr_t)   (((pkt) != NULL) ? ((pkt)->m.to) : 0)
 
 /**
  * \brief           Get length of packet

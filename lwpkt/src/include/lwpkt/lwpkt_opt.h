@@ -79,6 +79,20 @@ extern "C" {
 #endif
 
 /**
+ * \brief           Enables `1` or disables `0` extended address length.
+ *
+ * When enabled, multi-byte addresses are supported with MSB codification.
+ * Maximum address is limited to `32-bits`.
+ *
+ * When disabled, simple `8-bit` address is fixed with single byte.
+ *
+ * Feature is disabled by default to keep architecture compatibility
+ */
+#ifndef LWPKT_CFG_ADDR_EXTENDED
+#define LWPKT_CFG_ADDR_EXTENDED                 0
+#endif 
+
+/**
  * \brief           Enables `1` or disables `0` `cmd` field in the protocol.
  *
  * When disabled, command part is not used
