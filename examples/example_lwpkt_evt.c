@@ -16,8 +16,6 @@ static void
 my_lwpkt_evt_fn(lwpkt_t* pkt, lwpkt_evt_type_t type) {
     switch (type) {
         case LWPKT_EVT_PKT: {
-            size_t len;
-
             printf("Valid packet received..\r\n");
 
             /* Packet is valid */
@@ -25,13 +23,13 @@ my_lwpkt_evt_fn(lwpkt_t* pkt, lwpkt_evt_type_t type) {
 
             /* Print debug messages for packet */
 #if LWPKT_CFG_USE_ADDR
-            printf("Packet from: 0x%02X\r\n", (unsigned)lwpkt_get_from_addr(pkt));
-            printf("Packet to: 0x%02X\r\n", (unsigned)lwpkt_get_to_addr(pkt));
+            printf("Packet from: 0x%08X\r\n", (unsigned)lwpkt_get_from_addr(pkt));
+            printf("Packet to: 0x%08X\r\n", (unsigned)lwpkt_get_to_addr(pkt));
 #endif /* LWPKT_CFG_USE_ADDR */
 #if LWPKT_CFG_USE_CMD
-            printf("Packet cmd: 0x%02X\r\n", (unsigned)lwpkt_get_cmd(pkt));
+            printf("Packet cmd: 0x%08X\r\n", (unsigned)lwpkt_get_cmd(pkt));
 #endif /* LWPKT_CFG_USE_CMD */
-            printf("Packet data length: 0x%02X\r\n", (unsigned)lwpkt_get_data_len(pkt));
+            printf("Packet data length: 0x%08X\r\n", (unsigned)lwpkt_get_data_len(pkt));
 
             /* Do other thins... */
             break;

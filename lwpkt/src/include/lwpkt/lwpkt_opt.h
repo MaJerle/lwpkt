@@ -29,10 +29,13 @@
  * This file is part of LwPKT - Lightweight packet protocol library.
  *
  * Author:          Tilen MAJERLE <tilen@majerle.eu>
- * Version:         v1.0.1
+ * Version:         v1.1.0
  */
 #ifndef LWPKT_HDR_OPT_H
 #define LWPKT_HDR_OPT_H
+
+/* Uncomment to ignore user options (or set macro in compiler flags) */
+/* #define LWPKT_IGNORE_USER_OPTS */
 
 /* Include application options */
 #ifndef LWPKT_IGNORE_USER_OPTS
@@ -73,6 +76,20 @@ extern "C" {
  */
 #ifndef LWPKT_CFG_USE_ADDR
 #define LWPKT_CFG_USE_ADDR                      1
+#endif
+
+/**
+ * \brief           Enables `1` or disables `0` extended address length.
+ *
+ * When enabled, multi-byte addresses are supported with MSB codification.
+ * Maximum address is limited to `32-bits`.
+ *
+ * When disabled, simple `8-bit` address is fixed with single byte.
+ *
+ * Feature is disabled by default to keep architecture compatibility
+ */
+#ifndef LWPKT_CFG_ADDR_EXTENDED
+#define LWPKT_CFG_ADDR_EXTENDED                 0
 #endif
 
 /**

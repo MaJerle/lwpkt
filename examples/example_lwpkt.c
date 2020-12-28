@@ -77,13 +77,13 @@ example_lwpkt(void) {
 
         /* Print debug messages for packet */
 #if LWPKT_CFG_USE_ADDR
-        printf("Packet from: 0x%02X\r\n", (unsigned)lwpkt_get_from_addr(&pkt));
-        printf("Packet to: 0x%02X\r\n", (unsigned)lwpkt_get_to_addr(&pkt));
+        printf("Packet from: 0x%08X\r\n", (unsigned)lwpkt_get_from_addr(&pkt));
+        printf("Packet to: 0x%08X\r\n", (unsigned)lwpkt_get_to_addr(&pkt));
 #endif /* LWPKT_CFG_USE_ADDR */
 #if LWPKT_CFG_USE_CMD
         printf("Packet cmd: 0x%02X\r\n", (unsigned)lwpkt_get_cmd(&pkt));
 #endif /* LWPKT_CFG_USE_CMD */
-        printf("Packet data length: 0x%02X\r\n", (unsigned)lwpkt_get_data_len(&pkt));
+        printf("Packet data length: 0x%08X\r\n", (unsigned)lwpkt_get_data_len(&pkt));
         if ((len = lwpkt_get_data_len(&pkt)) > 0) {
             uint8_t* d = lwpkt_get_data(&pkt);
             printf("Packet data: ");
@@ -100,7 +100,7 @@ example_lwpkt(void) {
         } else if (lwpkt_is_broadcast(&pkt)) {
             printf("Packet is broadcast to all devices\r\n");
         } else {
-            printf("Packet is for device ID: 0x%02X\r\n", (unsigned)lwpkt_get_to_addr(&pkt));
+            printf("Packet is for device ID: 0x%08X\r\n", (unsigned)lwpkt_get_to_addr(&pkt));
         }
 #endif /* LWPKT_CFG_USE_ADDR */
     } else if (res == lwpktINPROG) {

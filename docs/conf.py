@@ -27,7 +27,7 @@ copyright = '2020, Tilen MAJERLE'
 author = 'Tilen MAJERLE'
 
 # The full version, including alpha/beta/rc tags
-version = '1.0.1'
+version = 'v1.1.0'
 
 # Try to get branch at which this is running
 # and try to determine which version to display in sphinx
@@ -112,7 +112,7 @@ html_css_files = [
     'css/custom.css',
 ]
 html_js_files = [
-    'https://kit.fontawesome.com/3102794088.js'
+    'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css'
 ]
 
 master_doc = 'index'

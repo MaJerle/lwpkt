@@ -15,8 +15,6 @@
 * CRC check to handle data transmission errors
 * User friendly MIT license
 
-https://docs.majerle.eu/projects/lwpkt/en/latest/
-
 ## Contribute
 
 Fresh contributions are always welcome. Simple instructions to proceed::
