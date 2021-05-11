@@ -181,7 +181,7 @@ lwpkt_read(lwpkt_t* pkt) {
 
                 /* Check if ready to move forward */
                 if (!LWPKT_CFG_ADDR_EXTENDED    /* Default mode goes straight with single byte */
-                    || (LWPKT_CFG_ADDR_EXTENDED && (b & 0x80) == 0x00)) { /* Extended mode must have MSB set to 0 */
+                    || (LWPKT_CFG_ADDR_EXTENDED && (b & 0x80) == 0x00)) {   /* Extended mode must have MSB set to 0 */
                     LWPKT_SET_STATE(pkt, LWPKT_STATE_TO);
                 }
                 break;
@@ -196,7 +196,7 @@ lwpkt_read(lwpkt_t* pkt) {
 
                 /* Check if ready to move forward */
                 if (!LWPKT_CFG_ADDR_EXTENDED    /* Default mode goes straight */
-                    || (LWPKT_CFG_ADDR_EXTENDED && (b & 0x80) == 0x00)) { /* Extended mode must have MSB set to 0 */
+                    || (LWPKT_CFG_ADDR_EXTENDED && (b & 0x80) == 0x00)) {   /* Extended mode must have MSB set to 0 */
 #if LWPKT_CFG_USE_CMD
                     LWPKT_SET_STATE(pkt, LWPKT_STATE_CMD);
 #else /* LWPKT_CFG_USE_CMD */
