@@ -8,6 +8,7 @@
 * Platform independent, no architecture specific code
 * Uses *LwRB* library for data read/write operations
 * Optimized for embedded systems, allows high optimization for data transfer
+* Support for events on packet ready, read or write operation
 * Configurable settings for packet structure and variable data length
 * Allows multiple notes in network with `from` and `to` addresses
 * Separate optional field for *command* data type

@@ -1,5 +1,9 @@
 # Changelog
 
+## Develop
+
+- Added support for events on packet ready, read or write operation
+
 ## v1.1.0
 
 - Added support for variable length for address fields
