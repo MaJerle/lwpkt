@@ -49,15 +49,22 @@
 } while (0)
 #define ADD_IN_TO_CRC(crc, val, len)    prv_crc_in((crc), (val), (len))
 #define INIT_CRC(crc)                   prv_crc_init((crc))
-#else
+#else /* LWPKT_CFG_USE_CRC */
 #define WRITE_WITH_CRC(crc, tx_rb, b, len) do { \
     lwrb_write((tx_rb), (b), (len));            \
 } while (0)
 #define ADD_IN_TO_CRC(val)
 #define INIT_CRC(val)
-#endif /* LWPKT_CFG_USE_CRC */
+#endif /* !LWPKT_CFG_USE_CRC */
+
+#if LWPKT_CFG_USE_EVT
+#define SEND_EVT(p, t)              if ((p)->evt_fn != NULL) { (p)->evt_fn((p), (t)); }
+#else /* LWPKT_CFG_USE_EVT */
+#define SEND_EVT(p, t)              do {(void)(p); (void)(t); } while (0)
+#endif /* !LWPKT_CFG_USE_EVT */
 
 #if LWPKT_CFG_USE_CRC || __DOXYGEN__
+
 /**
  * \brief           Add new value to CRC instance
  * \param[in]       c: CRC instance
@@ -95,6 +102,7 @@ static void
 prv_crc_init(lwpkt_crc_t* c) {
     memset(c, 0x00, sizeof(*c));
 }
+
 #endif /* LWPKT_CFG_USE_CRC || __DOXYGEN__ */
 
 /**
@@ -146,7 +154,9 @@ lwpkt_set_addr(lwpkt_t* pkt, lwpkt_addr_t addr) {
  */
 lwpktr_t
 lwpkt_read(lwpkt_t* pkt) {
-    uint8_t b;
+    lwpktr_t res = lwpktOK;
+    uint8_t b, e = 0;
+
     if (!LWPKT_IS_VALID(pkt)) {
         return lwpktERR;
     }
@@ -154,19 +164,14 @@ lwpkt_read(lwpkt_t* pkt) {
     /* Process bytes from RX ringbuffer */
     /* Read byte by byte and go through state machine */
     while (lwrb_read(pkt->rx_rb, &b, 1) == 1) {
+        e = 1;
         switch (pkt->m.state) {
             case LWPKT_STATE_START: {
                 if (b == LWPKT_START_BYTE) {
                     LWPKT_RESET(pkt);           /* Reset instance and make it ready for receiving */
                     INIT_CRC(&pkt->m.crc);
 
-#if LWPKT_CFG_USE_ADDR
-                    LWPKT_SET_STATE(pkt, LWPKT_STATE_FROM);
-#elif LWPKT_CFG_USE_CMD
-                    LWPKT_SET_STATE(pkt, LWPKT_STATE_CMD);
-#else
-                    LWPKT_SET_STATE(pkt, LWPKT_STATE_LEN);
-#endif /* LWPKT_CFG_USE_ADDR */
+                    LWPKT_SET_STATE(pkt, LWPKT_CFG_USE_ADDR ? LWPKT_STATE_FROM : (LWPKT_CFG_USE_CMD ? LWPKT_STATE_CMD : LWPKT_STATE_LEN));
                 }
                 break;
             }
@@ -175,9 +180,9 @@ lwpkt_read(lwpkt_t* pkt) {
                 ADD_IN_TO_CRC(&pkt->m.crc, &b, 1);
 #if LWPKT_CFG_ADDR_EXTENDED
                 pkt->m.from |= (b & 0x7F) << ((size_t)7 * (size_t)pkt->m.index++);
-#else
+#else /* LWPKT_CFG_ADDR_EXTENDED */
                 pkt->m.from = b;
-#endif /* LWPKT_CFG_ADDR_EXTENDED */
+#endif /* !LWPKT_CFG_ADDR_EXTENDED */
 
                 /* Check if ready to move forward */
                 if (!LWPKT_CFG_ADDR_EXTENDED    /* Default mode goes straight with single byte */
@@ -190,18 +195,14 @@ lwpkt_read(lwpkt_t* pkt) {
                 ADD_IN_TO_CRC(&pkt->m.crc, &b, 1);
 #if LWPKT_CFG_ADDR_EXTENDED
                 pkt->m.to |= (b & 0x7F) << ((size_t)7 * (size_t)pkt->m.index++);
-#else
+#else /* LWPKT_CFG_ADDR_EXTENDED */
                 pkt->m.to = b;
-#endif /* LWPKT_CFG_ADDR_EXTENDED */
+#endif /* !LWPKT_CFG_ADDR_EXTENDED */
 
                 /* Check if ready to move forward */
                 if (!LWPKT_CFG_ADDR_EXTENDED    /* Default mode goes straight */
                     || (LWPKT_CFG_ADDR_EXTENDED && (b & 0x80) == 0x00)) {   /* Extended mode must have MSB set to 0 */
-#if LWPKT_CFG_USE_CMD
-                    LWPKT_SET_STATE(pkt, LWPKT_STATE_CMD);
-#else /* LWPKT_CFG_USE_CMD */
-                    LWPKT_SET_STATE(pkt, LWPKT_STATE_LEN);
-#endif /* !LWPKT_CFG_USE_CMD */
+                    LWPKT_SET_STATE(pkt, LWPKT_CFG_USE_CMD ? LWPKT_STATE_CMD : LWPKT_STATE_LEN);
                 }
                 break;
             }
@@ -221,11 +222,7 @@ lwpkt_read(lwpkt_t* pkt) {
                 /* Last length bytes has MSB bit set to 0 */
                 if ((b & 0x80) == 0x00) {
                     if (pkt->m.len == 0) {
-#if LWPKT_CFG_USE_CRC
-                        LWPKT_SET_STATE(pkt, LWPKT_STATE_CRC);
-#else /* LWPKT_CFG_USE_CRC */
-                        LWPKT_SET_STATE(pkt, LWPKT_STATE_STOP);
-#endif /* !LWPKT_CFG_USE_CRC */
+                        LWPKT_SET_STATE(pkt, LWPKT_CFG_USE_CRC ? LWPKT_STATE_CRC : LWPKT_STATE_STOP);
                     } else {
                         LWPKT_SET_STATE(pkt, LWPKT_STATE_DATA);
                     }
@@ -236,11 +233,7 @@ lwpkt_read(lwpkt_t* pkt) {
                 pkt->data[pkt->m.index++] = b;
                 ADD_IN_TO_CRC(&pkt->m.crc, &b, 1);
                 if (pkt->m.index == pkt->m.len) {
-#if LWPKT_CFG_USE_CRC
-                    LWPKT_SET_STATE(pkt, LWPKT_STATE_CRC);
-#else /* LWPKT_CFG_USE_CRC */
-                    LWPKT_SET_STATE(pkt, LWPKT_STATE_STOP);
-#endif /* !LWPKT_CFG_USE_CRC */
+                    LWPKT_SET_STATE(pkt, LWPKT_CFG_USE_CRC ? LWPKT_STATE_CRC : LWPKT_STATE_STOP);
                 }
                 break;
             }
@@ -251,7 +244,8 @@ lwpkt_read(lwpkt_t* pkt) {
                     LWPKT_SET_STATE(pkt, LWPKT_STATE_STOP);
                 } else {
                     LWPKT_RESET(pkt);
-                    return lwpktERRCRC;
+                    res = lwpktERRCRC;
+                    goto retpre;
                 }
                 LWPKT_SET_STATE(pkt, LWPKT_STATE_STOP);
                 break;
@@ -260,31 +254,43 @@ lwpkt_read(lwpkt_t* pkt) {
             case LWPKT_STATE_STOP: {
                 LWPKT_SET_STATE(pkt, LWPKT_STATE_START);/* Reset packet state */
                 if (b == LWPKT_STOP_BYTE) {
-                    return lwpktVALID;          /* Packet fully valid, take data from it */
+                    res = lwpktVALID;           /* Packet fully valid, take data from it */
+                    goto retpre;
                 } else {
-                    return lwpktERRSTOP;        /* Packet is missin STOP byte! */
+                    res = lwpktERRSTOP;         /* Packet is missing STOP byte! */
+                    goto retpre;
                 }
             }
+            default: {
+                LWPKT_RESET(pkt);
+                res = lwpktERR;                 /* Hard error */
+                goto retpre;
+            }
         }
+    }
+    if (e) {
+        SEND_EVT(pkt, LWPKT_EVT_READ);          /* Send read event */
     }
     if (pkt->m.state == LWPKT_STATE_START) {
         return lwpktWAITDATA;
     }
     return lwpktINPROG;
+retpre:
+    SEND_EVT(pkt, LWPKT_EVT_READ);              /* Send read event */
+    return res;
 }
 
 /**
  * \brief           Process packet instance and read new data
  * \param[in]       pkt: Packet instance
  * \param[in]       time: Current time in units of milliseconds
- * \param[in]       evt_fn: Event function to be called on events
  * \return          \ref lwpktOK if processing OK, member of \ref lwpktr_t otherwise
  */
 lwpktr_t
-lwpkt_process(lwpkt_t* pkt, uint32_t time, lwpkt_evt_fn evt_fn) {
+lwpkt_process(lwpkt_t* pkt, uint32_t time) {
     lwpktr_t pktres;
 
-    if (pkt == NULL || evt_fn == NULL) {
+    if (pkt == NULL) {
         return lwpktERR;
     }
 
@@ -292,14 +298,12 @@ lwpkt_process(lwpkt_t* pkt, uint32_t time, lwpkt_evt_fn evt_fn) {
     pktres = lwpkt_read(pkt);
     if (pktres == lwpktVALID) {
         pkt->last_rx_time = time;
-        if (evt_fn != NULL) {
-            evt_fn(pkt, LWPKT_EVT_PKT);
-        }
+        SEND_EVT(pkt, LWPKT_EVT_PKT);
     } else if (pktres == lwpktINPROG) {
         if ((time - pkt->last_rx_time) >= LWPKT_CFG_PROCESS_INPROG_TIMEOUT) {
             lwpkt_reset(pkt);
             pkt->last_rx_time = time;
-            evt_fn(pkt, LWPKT_EVT_TIMEOUT);
+            SEND_EVT(pkt, LWPKT_EVT_TIMEOUT);
         }
     } else {
         pkt->last_rx_time = time;
@@ -363,7 +367,7 @@ lwpkt_write(lwpkt_t* pkt,
         WRITE_WITH_CRC(&crc, pkt->tx_rb, &b, 1);
         addr >>= 7;
     } while (addr > 0);
-#else
+#else /* LWPKT_CFG_ADDR_EXTENDED */
     WRITE_WITH_CRC(&crc, pkt->tx_rb, &pkt->addr, 1);
     WRITE_WITH_CRC(&crc, pkt->tx_rb, &to, 1);
 #endif /* !LWPKT_CFG_ADDR_EXTENDED */
@@ -395,6 +399,9 @@ lwpkt_write(lwpkt_t* pkt,
     b = LWPKT_STOP_BYTE;
     lwrb_write(pkt->tx_rb, &b, 1);
 
+    /* Final step to notify app */
+    SEND_EVT(pkt, LWPKT_EVT_WRITE);              /* Send write event */
+
     return lwpktOK;
 }
 
@@ -411,3 +418,20 @@ lwpkt_reset(lwpkt_t* pkt) {
     LWPKT_RESET(pkt);
     return lwpktOK;
 }
+
+#if LWPKT_CFG_USE_EVT || __DOXYGEN__
+
+/**
+ * \brief           Set event function for packet events
+ * \param[in]       pkt: Packet structure
+ * \param[in]       evt_fn: Function pointer for events
+ * \return          \ref lwpktOK on success, member of \ref lwpktr_t otherwise
+ */
+lwpktr_t
+lwpkt_set_evt_fn(lwpkt_t* pkt, lwpkt_evt_fn evt_fn) {
+    pkt->evt_fn = evt_fn;
+
+    return lwpktOK;
+}
+
+#endif /* LWPKT_CFG_USE_EVT || __DOXYGEN__ */

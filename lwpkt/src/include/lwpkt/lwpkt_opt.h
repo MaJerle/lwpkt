@@ -120,6 +120,14 @@ extern "C" {
 #endif
 
 /**
+ * \brief           Enables `1` or disables `0` event functions for read and write operations
+ *
+ */
+#ifndef LWPKT_CFG_USE_EVT
+#define LWPKT_CFG_USE_EVT                       1
+#endif
+
+/**
  * \}
  */
 
