@@ -74,6 +74,7 @@ typedef enum {
     lwpktERRCRC,                                /*!< CRC integrity error for the packet. Will not wait STOP byte if received */
     lwpktERRSTOP,                               /*!< Packet error with STOP byte, wrong character received for STOP */
     lwpktWAITDATA,                              /*!< Packet state is in start mode, waiting start byte to start receiving */
+    lwpktERRMEM,                                /*!< No enough memory available for write */
 } lwpktr_t;
 
 /**

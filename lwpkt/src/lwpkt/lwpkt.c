@@ -340,6 +340,55 @@ lwpkt_write(lwpkt_t* pkt,
 
     if (!LWPKT_IS_VALID(pkt)) {
         return lwpktERR;
+    } else {
+        /* Check for required memory for packet */
+        size_t min_mem = 2, tmp_len = 0;
+#if LWPKT_CFG_USE_ADDR && LWPKT_CFG_ADDR_EXTENDED
+        lwpkt_addr_t tmp_addr;
+#endif /* LWPKT_CFG_USE_ADDR && LWPKT_CFG_ADDR_EXTENDED */
+
+        /* Addresses */
+#if LWPKT_CFG_USE_ADDR
+#if LWPKT_CFG_ADDR_EXTENDED
+        tmp_addr = pkt->addr;
+        do {
+            ++min_mem;
+            tmp_addr >>= 7;
+        } while (tmp_addr > 0);
+        tmp_addr = to;
+        do {
+            ++min_mem;
+            tmp_addr >>= 7;
+        } while (tmp_addr > 0);
+#else /* LWPKT_CFG_ADDR_EXTENDED */
+        min_mem += 2;
+#endif /* !LWPKT_CFG_ADDR_EXTENDED */
+#endif /* LWPKT_CFG_USE_ADDR */
+
+#if LWPKT_CFG_USE_CMD
+        /* CMD part */
+        ++min_mem;
+#endif /* LWPKT_CFG_USE_CMD */
+
+        /* Data length */
+        tmp_len = len;
+        do {
+            ++min_mem;
+            tmp_len >>= 7;
+        } while (tmp_len > 0);
+
+        /* Data length */
+        min_mem += len;
+
+#if LWPKT_CFG_USE_CRC
+        /* CRC part */
+        ++min_mem;
+#endif /* LWPKT_CFG_USE_CRC */
+
+        /* Verify enough memory */
+        if (lwrb_get_free(pkt->tx_rb) < min_mem) {
+            return lwpktERRMEM;
+        }
     }
 
 #if LWPKT_CFG_USE_CRC
