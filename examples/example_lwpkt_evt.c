@@ -99,7 +99,10 @@ example_lwpkt_evt(void) {
      * means we received data over network interface
      */
 
+    /* Set callback function */
+    lwpkt_set_evt_fn(&pkt, my_lwpkt_evt_fn);
+
     /* Now call process function instead */
     time = 100; /* Get_current_time_in_milliseconds */
-    lwpkt_process(&pkt, time, my_lwpkt_evt_fn);
+    lwpkt_process(&pkt, time);
 }

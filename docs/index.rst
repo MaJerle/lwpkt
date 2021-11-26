@@ -18,7 +18,8 @@ Features
 
 * Written in ANSI C99, compatible with ``size_t`` for size data types
 * Platform independent, no architecture specific code
-* Uses `LwRB <https://github.com/MaJerle/lwpkt>`_ library for data read/write operations
+* Uses `LwRB <https://github.com/MaJerle/lwrb>`_ library for data read/write operations
+* Support for events on packet ready, read or write operation
 * Optimized for embedded systems, allows high optimization for data transfer
 * Configurable settings for packet structure and variable data length
 * Allows multiple notes in network with `from` and `to` addresses

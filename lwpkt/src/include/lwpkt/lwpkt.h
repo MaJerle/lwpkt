@@ -29,7 +29,7 @@
  * This file is part of LwPKT - Lightweight packet protocol library.
  *
  * Author:          Tilen MAJERLE <tilen@majerle.eu>
- * Version:         v1.1.0
+ * Version:         v1.2.0
  */
 #ifndef LWPKT_HDR_H
 #define LWPKT_HDR_H
@@ -54,18 +54,12 @@ extern "C" {
  */
 typedef enum {
     LWPKT_STATE_START = 0x00,                   /*!< Packet waits for start byte */
-#if LWPKT_CFG_USE_ADDR || __DOXYGEN__
     LWPKT_STATE_FROM,                           /*!< Packet waits for "packet from" byte */
     LWPKT_STATE_TO,                             /*!< Packet waits for "packet to" byte */
-#endif /* LWPKT_CFG_USE_ADDR || __DOXYGEN__ */
-#if LWPKT_CFG_USE_CMD || __DOXYGEN__
     LWPKT_STATE_CMD,                            /*!< Packet waits for "packet cmd" byte */
-#endif /* LWPKT_CFG_USE_CMD || __DOXYGEN__ */
     LWPKT_STATE_LEN,                            /*!< Packet waits for (multiple) data length bytes */
     LWPKT_STATE_DATA,                           /*!< Packet waits for actual data bytes */
-#if LWPKT_CFG_USE_CRC || __DOXYGEN__
     LWPKT_STATE_CRC,                            /*!< Packet waits for CRC data */
-#endif /* LWPKT_CFG_USE_CRC || __DOXYGEN__ */
     LWPKT_STATE_STOP,                           /*!< Packet waits for stop byte */
 } lwpkt_state_t;
 
@@ -80,6 +74,7 @@ typedef enum {
     lwpktERRCRC,                                /*!< CRC integrity error for the packet. Will not wait STOP byte if received */
     lwpktERRSTOP,                               /*!< Packet error with STOP byte, wrong character received for STOP */
     lwpktWAITDATA,                              /*!< Packet state is in start mode, waiting start byte to start receiving */
+    lwpktERRMEM,                                /*!< No enough memory available for write */
 } lwpktr_t;
 
 /**
@@ -88,6 +83,28 @@ typedef enum {
 typedef struct {
     uint8_t crc;                                /*!< Current CRC value */
 } lwpkt_crc_t;
+
+/* Forward declaration */
+struct lwpkt;
+
+/**
+ * \brief           List of event types
+ */
+typedef enum {
+    LWPKT_EVT_PKT,                              /*!< Valid packet ready to read */
+    LWPKT_EVT_TIMEOUT,                          /*!< Timeout on packat, reset event */
+    LWPKT_EVT_READ,                             /*!< Packet read operation.
+                                                         Called when read operation happens from RX buffer */
+    LWPKT_EVT_WRITE,                            /*!< Packet write operation.
+                                                         Called when write operation happens to TX buffer  */
+} lwpkt_evt_type_t;
+
+/**
+ * \brief           Event function prototype
+ * \param[in]       pkt: Packet structure
+ * \param[in]       evt_type: Event type
+ */
+typedef void (*lwpkt_evt_fn)(struct lwpkt* pkt, lwpkt_evt_type_t evt_type);
 
 /**
  * \brief           Device address data type
@@ -101,7 +118,7 @@ typedef uint8_t lwpkt_addr_t;
 /**
  * \brief           Packet structure
  */
-typedef struct {
+typedef struct lwpkt {
 #if LWPKT_CFG_USE_ADDR || __DOXYGEN__
     lwpkt_addr_t addr;                          /*!< Current device address */
 #endif /* LWPKT_CFG_USE_ADDR || __DOXYGEN__ */
@@ -109,6 +126,9 @@ typedef struct {
     LWRB_VOLATILE lwrb_t* tx_rb;                /*!< TX ringbuffer */
     LWRB_VOLATILE lwrb_t* rx_rb;                /*!< RX ringbuffer */
     uint32_t last_rx_time;                      /*!< Last RX time in units of milliseconds */
+#if LWPKT_CFG_USE_EVT || __DOXYGEN__
+    lwpkt_evt_fn evt_fn;                        /*!< Global event function for read and write operation */
+#endif /* LWPKT_CFG_USE_EVT || __DOXYGEN__ */
 
     struct {
         lwpkt_state_t state;                    /*!< Actual packet state machine */
@@ -127,21 +147,6 @@ typedef struct {
     } m;                                        /*!< Module that is periodically reset for next packet */
 } lwpkt_t;
 
-/**
- * \brief           List of event types
- */
-typedef enum {
-    LWPKT_EVT_PKT,                              /*!< Valid packet ready to read */
-    LWPKT_EVT_TIMEOUT                           /*!< Timeout on packat, reset event */
-} lwpkt_evt_type_t;
-
-/**
- * \brief           LwPKT event function
- * \param[in]       pkt: LwPKT instance with valid packet
- * \param[in]       type: Event type
- */
-typedef void(*lwpkt_evt_fn)(lwpkt_t* pkt, lwpkt_evt_type_t type);
-
 lwpktr_t    lwpkt_init(lwpkt_t* pkt, LWRB_VOLATILE lwrb_t* tx_rb, LWRB_VOLATILE lwrb_t* rx_rb);
 lwpktr_t    lwpkt_set_addr(lwpkt_t* pkt, lwpkt_addr_t addr);
 lwpktr_t    lwpkt_read(lwpkt_t* pkt);
@@ -154,7 +159,8 @@ lwpktr_t    lwpkt_write(lwpkt_t* pkt,
 #endif /* LWPKT_CFG_USE_CMD || __DOXYGEN__ */
     const void* data, size_t len);
 lwpktr_t    lwpkt_reset(lwpkt_t* pkt);
-lwpktr_t    lwpkt_process(lwpkt_t* pkt, uint32_t time, lwpkt_evt_fn evt_fn);
+lwpktr_t    lwpkt_process(lwpkt_t* pkt, uint32_t time);
+lwpktr_t    lwpkt_set_evt_fn(lwpkt_t* pkt, lwpkt_evt_fn evt_fn);
 
 /**
  * \brief           Get address from where packet was sent

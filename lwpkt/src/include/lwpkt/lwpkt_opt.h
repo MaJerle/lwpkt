@@ -29,7 +29,7 @@
  * This file is part of LwPKT - Lightweight packet protocol library.
  *
  * Author:          Tilen MAJERLE <tilen@majerle.eu>
- * Version:         v1.1.0
+ * Version:         v1.2.0
  */
 #ifndef LWPKT_HDR_OPT_H
 #define LWPKT_HDR_OPT_H
@@ -117,6 +117,14 @@ extern "C" {
  */
 #ifndef LWPKT_CFG_PROCESS_INPROG_TIMEOUT
 #define LWPKT_CFG_PROCESS_INPROG_TIMEOUT        100
+#endif
+
+/**
+ * \brief           Enables `1` or disables `0` event functions for read and write operations
+ *
+ */
+#ifndef LWPKT_CFG_USE_EVT
+#define LWPKT_CFG_USE_EVT                       1
 #endif
 
 /**
