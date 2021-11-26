@@ -2,7 +2,10 @@
 
 ## Develop
 
+## v1.2.0
+
 - Added support for events on packet ready, read or write operation
+- Add `library.json` for platform.io
 
 ## v1.1.0
 
