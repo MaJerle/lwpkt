@@ -1,5 +1,6 @@
-// main.c : Defines the entry point for the console application.
-//
+/*
+ * main.c : Defines the entry point for the console application.
+ */
 
 #include <stdio.h>
 #include <string.h>
@@ -12,6 +13,5 @@ int
 main() {
     example_lwpkt();
     example_lwpkt_evt();
-
     return 0;
 }
