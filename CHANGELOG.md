@@ -2,6 +2,8 @@
 
 ## Develop
 
+- Split CMakeLists.txt files between library and executable
+
 ## v1.2.0
 
 - Added support for events on packet ready, read or write operation
