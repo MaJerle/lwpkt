@@ -38,6 +38,9 @@ my_lwpkt_evt_fn(lwpkt_t* pkt, lwpkt_evt_type_t type) {
             printf("Timeout detected during read operation..\r\n");
             break;
         }
+        default: {
+            break;
+        }
     }
 }
 
@@ -105,4 +108,6 @@ example_lwpkt_evt(void) {
     /* Now call process function instead */
     time = 100; /* Get_current_time_in_milliseconds */
     lwpkt_process(&pkt, time);
+
+    (void)res;
 }
