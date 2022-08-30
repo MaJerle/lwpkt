@@ -4,6 +4,7 @@
 
 - Split CMakeLists.txt files between library and executable
 - Change license year to 2022
+- Add `.clang-format` draft
 
 ## v1.2.0
 
