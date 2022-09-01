@@ -57,7 +57,7 @@ extern "C" {
  *
  */
 #ifndef LWPKT_CFG_MAX_DATA_LEN
-#define LWPKT_CFG_MAX_DATA_LEN                  256
+#define LWPKT_CFG_MAX_DATA_LEN 256
 #endif
 
 /**
@@ -65,7 +65,7 @@ extern "C" {
  *
  */
 #ifndef LWPKT_CFG_ADDR_BROADCAST
-#define LWPKT_CFG_ADDR_BROADCAST                0xFF
+#define LWPKT_CFG_ADDR_BROADCAST 0xFF
 #endif
 
 /**
@@ -75,7 +75,7 @@ extern "C" {
  * without addressing requirements
  */
 #ifndef LWPKT_CFG_USE_ADDR
-#define LWPKT_CFG_USE_ADDR                      1
+#define LWPKT_CFG_USE_ADDR 1
 #endif
 
 /**
@@ -89,7 +89,7 @@ extern "C" {
  * Feature is disabled by default to keep architecture compatibility
  */
 #ifndef LWPKT_CFG_ADDR_EXTENDED
-#define LWPKT_CFG_ADDR_EXTENDED                 0
+#define LWPKT_CFG_ADDR_EXTENDED 0
 #endif
 
 /**
@@ -98,7 +98,7 @@ extern "C" {
  * When disabled, command part is not used
  */
 #ifndef LWPKT_CFG_USE_CMD
-#define LWPKT_CFG_USE_CMD                       1
+#define LWPKT_CFG_USE_CMD 1
 #endif
 
 /**
@@ -106,7 +106,7 @@ extern "C" {
  *
  */
 #ifndef LWPKT_CFG_USE_CRC
-#define LWPKT_CFG_USE_CRC                       1
+#define LWPKT_CFG_USE_CRC 1
 #endif
 
 /**
@@ -116,7 +116,7 @@ extern "C" {
  * Used with \ref lwpkt_process function
  */
 #ifndef LWPKT_CFG_PROCESS_INPROG_TIMEOUT
-#define LWPKT_CFG_PROCESS_INPROG_TIMEOUT        100
+#define LWPKT_CFG_PROCESS_INPROG_TIMEOUT 100
 #endif
 
 /**
@@ -124,7 +124,7 @@ extern "C" {
  *
  */
 #ifndef LWPKT_CFG_USE_EVT
-#define LWPKT_CFG_USE_EVT                       1
+#define LWPKT_CFG_USE_EVT 1
 #endif
 
 /**
