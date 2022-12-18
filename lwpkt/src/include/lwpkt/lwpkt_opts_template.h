@@ -31,8 +31,8 @@
  * Author:          Tilen MAJERLE <tilen@majerle.eu>
  * Version:         v1.2.0
  */
-#ifndef LWPKT_HDR_OPTS_H
-#define LWPKT_HDR_OPTS_H
+#ifndef LWPKT_OPTS_HDR_H
+#define LWPKT_OPTS_HDR_H
 
 /* Rename this file to "lwpkt_opts.h" for your application */
 
@@ -41,4 +41,4 @@
  * copy & replace here settings you want to change values
  */
 
-#endif /* LWPKT_HDR_OPTS_H */
+#endif /* LWPKT_OPTS_HDR_H */
