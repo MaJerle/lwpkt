@@ -248,10 +248,14 @@ lwpkt_read(lwpkt_t* pkt) {
                 break;
             }
             case LWPKT_STATE_DATA: {
-                pkt->data[pkt->m.index++] = b;
-                ADD_IN_TO_CRC(&pkt->m.crc, &b, 1);
-                if (pkt->m.index == pkt->m.len) {
-                    LWPKT_SET_STATE(pkt, LWPKT_CFG_USE_CRC ? LWPKT_STATE_CRC : LWPKT_STATE_STOP);
+                if (pkt->m.index < sizeof(pkt->data)) {
+                    pkt->data[pkt->m.index++] = b;
+                    ADD_IN_TO_CRC(&pkt->m.crc, &b, 1);
+                    if (pkt->m.index == pkt->m.len) {
+                        LWPKT_SET_STATE(pkt, LWPKT_CFG_USE_CRC ? LWPKT_STATE_CRC : LWPKT_STATE_STOP);
+                    }
+                } else {
+                    /* Error */
                 }
                 break;
             }
