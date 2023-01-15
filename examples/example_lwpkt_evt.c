@@ -75,12 +75,12 @@ example_lwpkt_evt(void) {
      */
     res = lwpkt_write(&pkt,
 #if LWPKT_CFG_USE_ADDR
-        0x11,                       /* End address to whom to send */
-#endif /* LWPKT_CFG_USE_ADDR */
+                      0x11, /* End address to whom to send */
+#endif                      /* LWPKT_CFG_USE_ADDR */
 #if LWPKT_CFG_USE_CMD
-        0x85,                       /* Command type */
-#endif /* LWPKT_CFG_USE_CMD */
-        data, strlen(data));        /* Length of data and actual data */
+                      0x85,                /* Command type */
+#endif                                     /* LWPKT_CFG_USE_CMD */
+                      data, strlen(data)); /* Length of data and actual data */
 
     /*
      * LwPKT wrote data to pkt_tx_rb ringbuffer

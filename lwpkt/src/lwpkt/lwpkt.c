@@ -255,7 +255,9 @@ lwpkt_read(lwpkt_t* pkt) {
                         LWPKT_SET_STATE(pkt, LWPKT_CFG_USE_CRC ? LWPKT_STATE_CRC : LWPKT_STATE_STOP);
                     }
                 } else {
-                    /* Error */
+                    LWPKT_RESET(pkt);
+                    res = lwpktERRMEM;
+                    goto retpre;
                 }
                 break;
             }
