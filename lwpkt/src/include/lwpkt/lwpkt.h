@@ -91,12 +91,24 @@ struct lwpkt;
  * \brief           List of event types
  */
 typedef enum {
-    LWPKT_EVT_PKT,     /*!< Valid packet ready to read */
-    LWPKT_EVT_TIMEOUT, /*!< Timeout on packat, reset event */
-    LWPKT_EVT_READ,    /*!< Packet read operation.
-                                                         Called when read operation happens from RX buffer */
-    LWPKT_EVT_WRITE,   /*!< Packet write operation.
-                                                         Called when write operation happens to TX buffer  */
+    LWPKT_EVT_PKT,        /*!< Valid packet ready to read */
+    LWPKT_EVT_TIMEOUT,    /*!< Timeout on packat, reset event */
+    LWPKT_EVT_READ,       /*!< Packet read operation.
+                            Called when read operation happens from RX buffer */
+    LWPKT_EVT_WRITE,      /*!< Packet write operation.
+                            Called when write operation happens to TX buffer  */
+    LWPKT_EVT_PRE_WRITE,  /*!< Packet pre-write operation.
+                                Called before write operation could even start.
+                                It can be used to get exclusive mutex access to the resource */
+    LWPKT_EVT_POST_WRITE, /*!< Packet post-write operation.
+                                Called after write operation finished.
+                                It can be used to release exclusive mutex access from the resource */
+    LWPKT_EVT_PRE_READ,   /*!< Packet pre-read operation.
+                                Called before read operation could even start.
+                                It can be used to get exclusive mutex access to the resource */
+    LWPKT_EVT_POST_READ,  /*!< Packet post-read operation.
+                                Called after read operation finished.
+                                It can be used to release exclusive mutex access from the resource */
 } lwpkt_evt_type_t;
 
 /**
@@ -123,31 +135,31 @@ typedef struct lwpkt {
     lwpkt_addr_t addr;                    /*!< Current device address */
 #endif                                    /* LWPKT_CFG_USE_ADDR || __DOXYGEN__ */
     uint8_t data[LWPKT_CFG_MAX_DATA_LEN]; /*!< Memory to write received data */
-    LWRB_VOLATILE lwrb_t* tx_rb;          /*!< TX ringbuffer */
-    LWRB_VOLATILE lwrb_t* rx_rb;          /*!< RX ringbuffer */
+    lwrb_t* tx_rb;                        /*!< TX ringbuffer */
+    lwrb_t* rx_rb;                        /*!< RX ringbuffer */
     uint32_t last_rx_time;                /*!< Last RX time in units of milliseconds */
 #if LWPKT_CFG_USE_EVT || __DOXYGEN__
-    lwpkt_evt_fn evt_fn; /*!< Global event function for read and write operation */
-#endif                   /* LWPKT_CFG_USE_EVT || __DOXYGEN__ */
+    lwpkt_evt_fn evt_fn;                  /*!< Global event function for read and write operation */
+#endif                                    /* LWPKT_CFG_USE_EVT || __DOXYGEN__ */
 
     struct {
         lwpkt_state_t state; /*!< Actual packet state machine */
 #if LWPKT_CFG_USE_CRC || __DOXYGEN__
-        lwpkt_crc_t crc; /*!< Packet CRC byte */
-#endif                   /* LWPKT_CFG_USE_CRC || __DOXYGEN__ */
+        lwpkt_crc_t crc;     /*!< Packet CRC byte */
+#endif                       /* LWPKT_CFG_USE_CRC || __DOXYGEN__ */
 #if LWPKT_CFG_USE_ADDR || __DOXYGEN__
-        lwpkt_addr_t from; /*!< Device address packet is coming from */
-        lwpkt_addr_t to;   /*!< Device address packet is intended for */
-#endif                     /* LWPKT_CFG_USE_ADDR || __DOXYGEN__ */
+        lwpkt_addr_t from;   /*!< Device address packet is coming from */
+        lwpkt_addr_t to;     /*!< Device address packet is intended for */
+#endif                       /* LWPKT_CFG_USE_ADDR || __DOXYGEN__ */
 #if LWPKT_CFG_USE_CMD || __DOXYGEN__
-        uint8_t cmd;  /*!< Command packet */
-#endif                /* LWPKT_CFG_USE_CMD || __DOXYGEN__ */
-        size_t len;   /*!< Number of bytes to receive */
-        size_t index; /*!< General index variable for multi-byte parts of packet */
-    } m;              /*!< Module that is periodically reset for next packet */
+        uint8_t cmd;         /*!< Command packet */
+#endif                       /* LWPKT_CFG_USE_CMD || __DOXYGEN__ */
+        size_t len;          /*!< Number of bytes to receive */
+        size_t index;        /*!< General index variable for multi-byte parts of packet */
+    } m;                     /*!< Module that is periodically reset for next packet */
 } lwpkt_t;
 
-lwpktr_t lwpkt_init(lwpkt_t* pkt, LWRB_VOLATILE lwrb_t* tx_rb, LWRB_VOLATILE lwrb_t* rx_rb);
+lwpktr_t lwpkt_init(lwpkt_t* pkt, lwrb_t* tx_rb, lwrb_t* rx_rb);
 lwpktr_t lwpkt_set_addr(lwpkt_t* pkt, lwpkt_addr_t addr);
 lwpktr_t lwpkt_read(lwpkt_t* pkt);
 lwpktr_t lwpkt_write(lwpkt_t* pkt,

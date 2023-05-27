@@ -7,6 +7,8 @@
 - Add `.clang-format` draft
 - Change license year to 2023
 - Add memory overflow check
+- Add more events for pre and post write & read operations
+- Add more recent version of LwRB
 
 ## v1.2.0
 
