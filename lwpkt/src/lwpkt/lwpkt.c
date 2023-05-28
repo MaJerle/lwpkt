@@ -276,11 +276,11 @@ lwpkt_read(lwpkt_t* pkt) {
                 LWPKT_SET_STATE(pkt, LWPKT_STATE_STOP);
                 break;
             }
-#endif                                                   /* LWPKT_CFG_USE_CRC */
+#endif /* LWPKT_CFG_USE_CRC */
             case LWPKT_STATE_STOP: {
                 LWPKT_SET_STATE(pkt, LWPKT_STATE_START); /* Reset packet state */
                 if (b == LWPKT_STOP_BYTE) {
-                    res = lwpktVALID;                    /* Packet fully valid, take data from it */
+                    res = lwpktVALID; /* Packet fully valid, take data from it */
                     goto retpre;
                 } else {
                     res = lwpktERRSTOP; /* Packet is missing STOP byte! */
@@ -376,7 +376,7 @@ lwpkt_write(lwpkt_t* pkt,
         size_t min_mem = 2, tmp_len = 0;
 #if LWPKT_CFG_USE_ADDR && LWPKT_CFG_ADDR_EXTENDED
         lwpkt_addr_t tmp_addr;
-#endif  /* LWPKT_CFG_USE_ADDR && LWPKT_CFG_ADDR_EXTENDED */
+#endif /* LWPKT_CFG_USE_ADDR && LWPKT_CFG_ADDR_EXTENDED */
 
         /* Addresses */
 #if LWPKT_CFG_USE_ADDR
@@ -484,7 +484,7 @@ fast_return:
     /* Final step to notify app */
     SEND_EVT(pkt, LWPKT_EVT_POST_WRITE); /* Release write event */
     if (res == lwpktOK) {
-        SEND_EVT(pkt, LWPKT_EVT_WRITE);  /* Send write event */
+        SEND_EVT(pkt, LWPKT_EVT_WRITE); /* Send write event */
     }
     return res;
 }

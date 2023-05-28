@@ -139,24 +139,24 @@ typedef struct lwpkt {
     lwrb_t* rx_rb;                        /*!< RX ringbuffer */
     uint32_t last_rx_time;                /*!< Last RX time in units of milliseconds */
 #if LWPKT_CFG_USE_EVT || __DOXYGEN__
-    lwpkt_evt_fn evt_fn;                  /*!< Global event function for read and write operation */
-#endif                                    /* LWPKT_CFG_USE_EVT || __DOXYGEN__ */
+    lwpkt_evt_fn evt_fn; /*!< Global event function for read and write operation */
+#endif                   /* LWPKT_CFG_USE_EVT || __DOXYGEN__ */
 
     struct {
         lwpkt_state_t state; /*!< Actual packet state machine */
 #if LWPKT_CFG_USE_CRC || __DOXYGEN__
-        lwpkt_crc_t crc;     /*!< Packet CRC byte */
-#endif                       /* LWPKT_CFG_USE_CRC || __DOXYGEN__ */
+        lwpkt_crc_t crc; /*!< Packet CRC byte */
+#endif                   /* LWPKT_CFG_USE_CRC || __DOXYGEN__ */
 #if LWPKT_CFG_USE_ADDR || __DOXYGEN__
-        lwpkt_addr_t from;   /*!< Device address packet is coming from */
-        lwpkt_addr_t to;     /*!< Device address packet is intended for */
-#endif                       /* LWPKT_CFG_USE_ADDR || __DOXYGEN__ */
+        lwpkt_addr_t from; /*!< Device address packet is coming from */
+        lwpkt_addr_t to;   /*!< Device address packet is intended for */
+#endif                     /* LWPKT_CFG_USE_ADDR || __DOXYGEN__ */
 #if LWPKT_CFG_USE_CMD || __DOXYGEN__
-        uint8_t cmd;         /*!< Command packet */
-#endif                       /* LWPKT_CFG_USE_CMD || __DOXYGEN__ */
-        size_t len;          /*!< Number of bytes to receive */
-        size_t index;        /*!< General index variable for multi-byte parts of packet */
-    } m;                     /*!< Module that is periodically reset for next packet */
+        uint8_t cmd;  /*!< Command packet */
+#endif                /* LWPKT_CFG_USE_CMD || __DOXYGEN__ */
+        size_t len;   /*!< Number of bytes to receive */
+        size_t index; /*!< General index variable for multi-byte parts of packet */
+    } m;              /*!< Module that is periodically reset for next packet */
 } lwpkt_t;
 
 lwpktr_t lwpkt_init(lwpkt_t* pkt, lwrb_t* tx_rb, lwrb_t* rx_rb);
