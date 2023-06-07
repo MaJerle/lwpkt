@@ -9,6 +9,7 @@
 - Add memory overflow check
 - Add more events for pre and post write & read operations
 - Add more recent version of LwRB
+- Fix compilation error if CRC mode is disabled
 
 ## v1.2.0
 
