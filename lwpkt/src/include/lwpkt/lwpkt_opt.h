@@ -53,6 +53,24 @@ extern "C" {
  */
 
 /**
+ * \brief           Memory set function
+ * 
+ * \note            Function footprint is the same as \ref memset
+ */
+#ifndef LWPKT_MEMSET
+#define LWPKT_MEMSET(dst, val, len) memset((dst), (val), (len))
+#endif
+
+/**
+ * \brief           Memory copy function
+ * 
+ * \note            Function footprint is the same as \ref memcpy
+ */
+#ifndef LWPKT_MEMCPY
+#define LWPKT_MEMCPY(dst, src, len) memcpy((dst), (src), (len))
+#endif
+
+/**
  * \brief           Maximum length of `data` part of the packet in units of bytes
  *
  */

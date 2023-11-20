@@ -4,7 +4,10 @@
         "lwevt_type.h": "c",
         "lwevt.h": "c",
         "string.h": "c",
-        "lwevt_opt.h": "c"
+        "lwevt_opt.h": "c",
+        "random": "c",
+        "lwpkt.h": "c",
+        "lwpkt_opt.h": "c"
     },
     "esbonio.sphinx.confDir": ""
 }
