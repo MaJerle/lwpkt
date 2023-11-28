@@ -31,5 +31,8 @@
 			"build",
 			"**/build"
 		]
-	}
+	},
+    "build": {
+        "includeDir": "lwpkt/src/include"
+    }
 }
