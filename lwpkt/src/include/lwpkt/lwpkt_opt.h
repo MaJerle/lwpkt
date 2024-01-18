@@ -91,6 +91,12 @@ extern "C" {
  *
  * This features is useful if communication is between 2 devices exclusively,
  * without addressing requirements
+ * 
+ * Configuration options:
+ *  - `0`: Feature is globally disabled in the library
+ *  - `1`: Feature is globally enabled in the library
+ *  - `2`: Feature is dynamically enabled/disabled in the library, according to the LwPKT object instance.
+ *      If set to `2`, feature is by default enabled, but it can be disabled with appropriate API function.
  */
 #ifndef LWPKT_CFG_USE_ADDR
 #define LWPKT_CFG_USE_ADDR 1
@@ -105,6 +111,12 @@ extern "C" {
  * When disabled, simple `8-bit` address is fixed with single byte.
  *
  * Feature is disabled by default to keep architecture compatibility
+ * 
+ * Configuration options:
+ *  - `0`: Feature is globally disabled in the library
+ *  - `1`: Feature is globally enabled in the library
+ *  - `2`: Feature is dynamically enabled/disabled in the library, according to the LwPKT object instance.
+ *      If set to `2`, feature is by default enabled, but it can be disabled with appropriate API function.
  */
 #ifndef LWPKT_CFG_ADDR_EXTENDED
 #define LWPKT_CFG_ADDR_EXTENDED 0
@@ -114,6 +126,12 @@ extern "C" {
  * \brief           Enables `1` or disables `0` `cmd` field in the protocol.
  *
  * When disabled, command part is not used
+ * 
+ * Configuration options:
+ *  - `0`: Feature is globally disabled in the library
+ *  - `1`: Feature is globally enabled in the library
+ *  - `2`: Feature is dynamically enabled/disabled in the library, according to the LwPKT object instance.
+ *      If set to `2`, feature is by default enabled, but it can be disabled with appropriate API function.
  */
 #ifndef LWPKT_CFG_USE_CMD
 #define LWPKT_CFG_USE_CMD 1
@@ -121,7 +139,12 @@ extern "C" {
 
 /**
  * \brief           Enables `1` or disables `0` CRC check in the protocol.
- *
+ * 
+ * Configuration options:
+ *  - `0`: Feature is globally disabled in the library
+ *  - `1`: Feature is globally enabled in the library
+ *  - `2`: Feature is dynamically enabled/disabled in the library, according to the LwPKT object instance.
+ *      If set to `2`, feature is by default enabled, but it can be disabled with appropriate API function.
  */
 #ifndef LWPKT_CFG_USE_CRC
 #define LWPKT_CFG_USE_CRC 1

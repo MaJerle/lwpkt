@@ -141,6 +141,7 @@ typedef struct lwpkt {
 #if LWPKT_CFG_USE_EVT || __DOXYGEN__
     lwpkt_evt_fn evt_fn; /*!< Global event function for read and write operation */
 #endif                   /* LWPKT_CFG_USE_EVT || __DOXYGEN__ */
+    uint8_t flags;       /*!< List of flags */
 
     struct {
         lwpkt_state_t state; /*!< Actual packet state machine */
@@ -173,6 +174,12 @@ lwpktr_t lwpkt_write(lwpkt_t* pkt,
 lwpktr_t lwpkt_reset(lwpkt_t* pkt);
 lwpktr_t lwpkt_process(lwpkt_t* pkt, uint32_t time);
 lwpktr_t lwpkt_set_evt_fn(lwpkt_t* pkt, lwpkt_evt_fn evt_fn);
+
+/* Functions available as conditional build */
+void lwpkt_set_crc_enabled(lwpkt_t* pkt, uint8_t enable);
+void lwpkt_set_addr_enabled(lwpkt_t* pkt, uint8_t enable);
+void lwpkt_set_addr_extended_enabled(lwpkt_t* pkt, uint8_t enable);
+void lwpkt_set_cmd_enabled(lwpkt_t* pkt, uint8_t enable);
 
 /**
  * \brief           Get address from where packet was sent

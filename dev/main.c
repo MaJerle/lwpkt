@@ -12,6 +12,6 @@ extern void example_lwpkt_evt(void);
 int
 main() {
     example_lwpkt();
-    example_lwpkt_evt();
+    //  example_lwpkt_evt();
     return 0;
 }

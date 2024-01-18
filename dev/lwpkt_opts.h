@@ -34,11 +34,9 @@
 #ifndef LWPKT_HDR_OPTS_H
 #define LWPKT_HDR_OPTS_H
 
-/* Rename this file to "lwpkt_opts.h" for your application */
-
-/*
- * Open "include/lwpkt/lwpkt_opt.h" and
- * copy & replace here settings you want to change values
- */
+#define LWPKT_CFG_USE_ADDR      2
+#define LWPKT_CFG_ADDR_EXTENDED 2
+#define LWPKT_CFG_USE_CMD       2
+#define LWPKT_CFG_USE_CRC       2
 
 #endif /* LWPKT_HDR_OPTS_H */
