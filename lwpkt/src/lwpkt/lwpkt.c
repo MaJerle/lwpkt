@@ -98,18 +98,18 @@
 /* Checks if feature is enabled for specific pkt instance */
 #define CHECK_FEATURE_CONFIG_MODE_ENABLED(_pkt_, _feature_, _flag_)                                                    \
     (0                                                    /* For alignment purpose only */                             \
-     || (_feature_) == 1                                  /* 1 == feature is globally enabled */                       \
+     || ((_feature_) == 1)                                /* 1 == feature is globally enabled */                       \
      || ((_feature_) == 2 && ((_pkt_)->flags & (_flag_))) /* 2 == feature is dynamically enabled */                    \
     )
 
 /* Calculates number of bytes required to encode length. Result is increased for num_var (+= operand)*/
 #define CALC_BYTES_NUM_FOR_LEN(num_var, len_var)                                                                       \
     do {                                                                                                               \
-        uint32_t len = (len_var);                                                                                      \
+        uint32_t len_local = (len_var);                                                                                \
         do {                                                                                                           \
             ++(num_var);                                                                                               \
-            len >>= 7;                                                                                                 \
-        } while (len > 0);                                                                                             \
+            len_local >>= 7;                                                                                           \
+        } while (len_local > 0);                                                                                       \
     } while (0)
 
 #if LWPKT_CFG_USE_CRC || __DOXYGEN__
@@ -310,7 +310,7 @@ lwpkt_read(lwpkt_t* pkt) {
                     ADD_IN_TO_CRC(pkt, &pkt->m.crc, &b, 1U);
                     if (pkt->m.index == pkt->m.len) {
                         LWPKT_SET_STATE(pkt,
-                                        CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_USE_ADDR, LWPKT_FLAG_USE_ADDR)
+                                        CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_USE_CRC, LWPKT_FLAG_USE_CRC)
                                             ? LWPKT_STATE_CRC
                                             : LWPKT_STATE_STOP);
                     }
@@ -331,7 +331,6 @@ lwpkt_read(lwpkt_t* pkt) {
                     res = lwpktERRCRC;
                     goto retpre;
                 }
-                LWPKT_SET_STATE(pkt, LWPKT_STATE_STOP);
                 break;
             }
 #endif /* LWPKT_CFG_USE_CRC */
