@@ -24,14 +24,14 @@ Packet structure consists of several fields, where some are optional and some ar
 
 .. figure:: ../static/images/packet-structure.svg
     :align: center
-    :alt: Default packet structure
+    :alt: Full features structure format
 
-    Default packet structure
+    Full features structure format
 
 * ``START``: Byte with fixed value to represent start of packet
 * ``FROM``: Byte(s) from where this packet is coming from. Optional field, can be disabled with :c:macro:`LWPKT_CFG_USE_ADDR`
 * ``TO``: Byte(s) to where this packet is targeting. Optional field, can be disabled with :c:macro:`LWPKT_CFG_USE_ADDR`
-* ``FLAGS``: Variable length (unsigned 32-bit max) field for optional user flags.
+* ``FLAGS``: Variable length (unsigned 32-bit max) field for optional user flags. Optional field, can be disabled with :c:macro:`LWPKT_CFG_USE_FLAGS`
 * ``CMD``: Byte with optional command field to better align with multiple packets. Optional field, can be disabled with :c:macro:`LWPKT_CFG_USE_CMD`
 * ``LEN``: Length of *data* part field. This is variable multi-byte length to support data length ``>= 256`` bytes. Always present
 * ``DATA``: Optional data field. Number of bytes is as in ``LEN`` field
