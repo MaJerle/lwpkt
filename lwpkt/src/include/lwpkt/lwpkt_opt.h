@@ -151,6 +151,24 @@ extern "C" {
 #endif
 
 /**
+ * \brief           Enables `1` or disables `0` flags field in the protocol.
+ * 
+ * When enabled, multi-byte addresses are supported with MSB codification.
+ * Maximum address is limited to `32-bits`.
+ *
+ * Feature is disabled by default to keep architecture compatibility
+ * 
+ * Configuration options:
+ *  - `0`: Feature is globally disabled in the library
+ *  - `1`: Feature is globally enabled in the library
+ *  - `2`: Feature is dynamically enabled/disabled in the library, according to the LwPKT object instance.
+ *      If set to `2`, feature is by default enabled, but it can be disabled with appropriate API function.
+ */
+#ifndef LWPKT_CFG_USE_FLAGS
+#define LWPKT_CFG_USE_FLAGS 0
+#endif
+
+/**
  * \brief           Defines timeout time before packet is considered as not valid
  *                  when too long time in data-read mode
  *

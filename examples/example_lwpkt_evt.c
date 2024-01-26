@@ -77,6 +77,9 @@ example_lwpkt_evt(void) {
 #if LWPKT_CFG_USE_ADDR
                       0x11, /* End address to whom to send */
 #endif                      /* LWPKT_CFG_USE_ADDR */
+#if LWPKT_CFG_USE_FLAGS
+                      0x12345678, /* Custom flags added to the packet */
+#endif                            /* LWPKT_CFG_USE_FLAGS */
 #if LWPKT_CFG_USE_CMD
                       0x85,                /* Command type */
 #endif                                     /* LWPKT_CFG_USE_CMD */

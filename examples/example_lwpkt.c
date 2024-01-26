@@ -41,6 +41,9 @@ example_lwpkt(void) {
 #if LWPKT_CFG_USE_ADDR
                       0x11, /* End address to whom to send */
 #endif                      /* LWPKT_CFG_USE_ADDR */
+#if LWPKT_CFG_USE_FLAGS
+                      0x12345678,
+#endif /* LWPKT_CFG_USE_FLAGS */
 #if LWPKT_CFG_USE_CMD
                       0x85,                /* Command type */
 #endif                                     /* LWPKT_CFG_USE_CMD */
@@ -80,6 +83,9 @@ example_lwpkt(void) {
         printf("Packet from: 0x%08X\r\n", (unsigned)lwpkt_get_from_addr(&pkt));
         printf("Packet to: 0x%08X\r\n", (unsigned)lwpkt_get_to_addr(&pkt));
 #endif /* LWPKT_CFG_USE_ADDR */
+#if LWPKT_CFG_USE_FLAGS
+        printf("Packet flags: 0x%08X\r\n", (unsigned)lwpkt_get_flags(&pkt));
+#endif /* LWPKT_CFG_USE_FLAGS */
 #if LWPKT_CFG_USE_CMD
         printf("Packet cmd: 0x%02X\r\n", (unsigned)lwpkt_get_cmd(&pkt));
 #endif /* LWPKT_CFG_USE_CMD */

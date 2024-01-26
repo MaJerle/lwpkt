@@ -31,6 +31,7 @@ Packet structure consists of several fields, where some are optional and some ar
 * ``START``: Byte with fixed value to represent start of packet
 * ``FROM``: Byte(s) from where this packet is coming from. Optional field, can be disabled with :c:macro:`LWPKT_CFG_USE_ADDR`
 * ``TO``: Byte(s) to where this packet is targeting. Optional field, can be disabled with :c:macro:`LWPKT_CFG_USE_ADDR`
+* ``FLAGS``: Variable length (unsigned 32-bit max) field for optional user flags.
 * ``CMD``: Byte with optional command field to better align with multiple packets. Optional field, can be disabled with :c:macro:`LWPKT_CFG_USE_CMD`
 * ``LEN``: Length of *data* part field. This is variable multi-byte length to support data length ``>= 256`` bytes. Always present
 * ``DATA``: Optional data field. Number of bytes is as in ``LEN`` field
@@ -57,8 +58,9 @@ Variable data length
 Some fields implement variable data length feature, to optimize data transfer length.
 Currently supported fields are:
 
-* ``DATA`` field is always enabled
+* ``LEN`` field is always enabled
 * ``FROM`` and ``TO`` fields when :c:macro:`LWPKT_CFG_ADDR_EXTENDED` feature is enabled
+* ``FLAGS`` field when :c:macro:`LWPKT_CFG_USE_FLAGS` feature is enabled
 
 Variable data length is a feature that uses minimum number of bytes to transfer data.
 It uses ``7 LSB bits`` per byte for actual data, and ``MSB`` bit to indicate if there are more bytes coming after.
@@ -67,6 +69,17 @@ To transfer ``32-bit`` variable, minimum ``1-byte`` and maximum ``5-bytes`` are 
 
 .. tip ::
     Data codification is always LSB Byte first.
+
+Static & dynamic feature
+************************
+
+LwPKT supports multiple instance in the same build, but there might be cases where each instance needs different protocol configuration,
+such as enabled/disabled **from/to** fields or enabled/disabled **command** feature.
+
+Some configuration features (See configuration chapter for full list of options) support static or dynamic configuration:
+
+- **static** configuration is one configuration for all instances. Globally enabled or disabled feature
+- **dynamic** configuration allows that each instance keeps its own protocol configuration. 
 
 Event management
 ****************

@@ -57,6 +57,7 @@ typedef enum {
     LWPKT_STATE_FROM,         /*!< Packet waits for "packet from" byte */
     LWPKT_STATE_TO,           /*!< Packet waits for "packet to" byte */
     LWPKT_STATE_CMD,          /*!< Packet waits for "packet cmd" byte */
+    LWPKT_STATE_FLAGS,        /*!< Packet waits for "packet flags" byte (custom user flags) */
     LWPKT_STATE_LEN,          /*!< Packet waits for (multiple) data length bytes */
     LWPKT_STATE_DATA,         /*!< Packet waits for actual data bytes */
     LWPKT_STATE_CRC,          /*!< Packet waits for CRC data */
@@ -152,6 +153,9 @@ typedef struct lwpkt {
         lwpkt_addr_t from; /*!< Device address packet is coming from */
         lwpkt_addr_t to;   /*!< Device address packet is intended for */
 #endif                     /* LWPKT_CFG_USE_ADDR || __DOXYGEN__ */
+#if LWPKT_CFG_USE_FLAGS || __DOXYGEN__
+        uint32_t flags; /*!< Custom flags */
+#endif                  /* LWPKT_CFG_USE_FLAGS || __DOXYGEN__ */
 #if LWPKT_CFG_USE_CMD || __DOXYGEN__
         uint8_t cmd;  /*!< Command packet */
 #endif                /* LWPKT_CFG_USE_CMD || __DOXYGEN__ */
@@ -167,6 +171,9 @@ lwpktr_t lwpkt_write(lwpkt_t* pkt,
 #if LWPKT_CFG_USE_ADDR || __DOXYGEN__
                      lwpkt_addr_t to,
 #endif /* LWPKT_CFG_USE_ADDR || __DOXYGEN__ */
+#if LWPKT_CFG_USE_FLAGS || __DOXYGEN__
+                     uint32_t flags,
+#endif /* LWPKT_CFG_USE_FLAGS || __DOXYGEN__ */
 #if LWPKT_CFG_USE_CMD || __DOXYGEN__
                      uint8_t cmd,
 #endif /* LWPKT_CFG_USE_CMD || __DOXYGEN__ */
@@ -180,6 +187,7 @@ void lwpkt_set_crc_enabled(lwpkt_t* pkt, uint8_t enable);
 void lwpkt_set_addr_enabled(lwpkt_t* pkt, uint8_t enable);
 void lwpkt_set_addr_extended_enabled(lwpkt_t* pkt, uint8_t enable);
 void lwpkt_set_cmd_enabled(lwpkt_t* pkt, uint8_t enable);
+void lwpkt_set_flags_enabled(lwpkt_t* pkt, uint8_t enable);
 
 /**
  * \brief           Get address from where packet was sent
@@ -215,6 +223,13 @@ void lwpkt_set_cmd_enabled(lwpkt_t* pkt, uint8_t enable);
  * \return          Command data field
  */
 #define lwpkt_get_cmd(pkt)       (uint8_t)(((pkt) != NULL) ? ((pkt)->m.cmd) : 0)
+
+/**
+ * \brief           Get packet flags
+ * \param[in]       pkt: LwPKT instance
+ * \return          Last received packet flags
+ */
+#define lwpkt_get_flags(pkt)     (uint32_t)(((pkt) != NULL) ? ((pkt)->m.flags) : 0)
 
 /**
  * \brief           Check if packet `to` field address matches device address
