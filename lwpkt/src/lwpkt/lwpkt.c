@@ -175,56 +175,42 @@ static void
 prv_go_to_next_packet_rx_state(lwpkt_t* pkt) {
     lwpkt_state_t next_state = LWPKT_STATE_END;
     switch (pkt->m.state) {
+        /*
+         * Start, addressing, flags and command are all optional 
+         * and all of them are in a sequence.
+         * 
+         * If one of them is disabled, we can simply use a fall-through mode
+         * and check for a next state to move to, if that state is enabled.
+         * 
+         * This is very valid C syntax
+         * 
+         * From start state, we can go to:
+         * 
+         * 1. addressing, if addressing is enabled.
+         * 2. flags management
+         * 2. command, if it is enabled
+         * 4. Final option is to go directly to packet length check
+         */
         case LWPKT_STATE_START: {
-            /*
-             * 1. Go to addressing, if addressing is enabled.
-             * 2. Go to command parser, if it is enabled
-             * 3. Go to data length otherwise (always enabled)
-             * 4. Final option is to go directly to packet length check
-             */
             if (CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_USE_ADDR, LWPKT_FLAG_USE_ADDR)) {
                 next_state = LWPKT_STATE_FROM;
-            } else if (CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_USE_FLAGS, LWPKT_FLAG_USE_FLAGS)) {
-                next_state = LWPKT_STATE_FLAGS;
-            } else if (CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_USE_CMD, LWPKT_FLAG_USE_CMD)) {
-                next_state = LWPKT_STATE_CMD;
-            } else {
-                next_state = LWPKT_STATE_LEN;
+                break;
             }
-            break;
-        }
-        case LWPKT_STATE_FROM: {
-            /* There is no other way but to handle second part of addressing */
-            next_state = LWPKT_STATE_TO;
-            break;
-        }
+            /* Go to next step if address isn't enabled */
+        } /* fallthrough */
         case LWPKT_STATE_TO: {
-            /*
-             * 1. Go to command parser, if it is enabled
-             * 2. Go to data length otherwise (always enabled)
-             * 3. Final option is to go directly to packet length check
-             */
             if (CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_USE_FLAGS, LWPKT_FLAG_USE_FLAGS)) {
                 next_state = LWPKT_STATE_FLAGS;
-            } else if (CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_USE_CMD, LWPKT_FLAG_USE_CMD)) {
-                next_state = LWPKT_STATE_CMD;
-            } else {
-                next_state = LWPKT_STATE_LEN;
+                break;
             }
-            break;
-        }
+            /* Go to next step if flags aren't enabled */
+        } /* fallthrough */
         case LWPKT_STATE_FLAGS: {
-            /*
-             * 1. Go to data length otherwise (always enabled)
-             * 2. Final option is to go directly to packet length check
-             */
             if (CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_USE_CMD, LWPKT_FLAG_USE_CMD)) {
                 next_state = LWPKT_STATE_CMD;
-            } else {
-                next_state = LWPKT_STATE_LEN;
+                break;
             }
-            break;
-        }
+        } /* fallthrough */
         case LWPKT_STATE_CMD: {
             next_state = LWPKT_STATE_LEN;
             break;
@@ -233,38 +219,34 @@ prv_go_to_next_packet_rx_state(lwpkt_t* pkt) {
             /*
              * If data length is zero, skip data part
              *
-             * 1. Go to data length otherwise (always enabled)
-             * 2. Final option is to go directly to packet length check
-             * 
-             * Go to data, if present
+             * 1. Go to DATA if len != 0
+             * 2. Go to CRC if enabled
+             * 3. Go to STOP check
              */
             if (pkt->m.len > 0) {
                 next_state = LWPKT_STATE_DATA;
-            } else if (CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_USE_CRC, LWPKT_FLAG_USE_CRC)) {
-                next_state = LWPKT_STATE_CRC;
-            } else {
-                next_state = LWPKT_STATE_STOP;
+                break;
             }
-            break;
-        }
+        } /* fallthrough */
         case LWPKT_STATE_DATA: {
-            /*
-             * 1. Go to CRC if enabled
-             * 2. Skip CRC and go to stop
-             */
             if (CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_USE_CRC, LWPKT_FLAG_USE_CRC)) {
                 next_state = LWPKT_STATE_CRC;
-            } else {
-                next_state = LWPKT_STATE_STOP;
+                break;
             }
-            break;
-        }
+            /* Go to next step if CRC isn't enabled */
+        } /* fallthrough */
         case LWPKT_STATE_CRC: {
-            /* Do nothing, this case is handled in the read operations directly */
+            next_state = LWPKT_STATE_STOP;
             break;
         }
         case LWPKT_STATE_STOP: {
             next_state = LWPKT_STATE_START;
+            break;
+        }
+        case LWPKT_STATE_FROM: {
+            /* Step between FROM and TO, always in a sequence */
+            /* There is no other way but to handle second part of addressing */
+            next_state = LWPKT_STATE_TO;
             break;
         }
         default: {
