@@ -167,6 +167,115 @@ prv_crc_init(lwpkt_crc_t* crcobj) {
 #endif /* LWPKT_CFG_USE_CRC || __DOXYGEN__ */
 
 /**
+ * \brief           Single function to define steps between packet states
+ * 
+ * \param           pkt: Packet handle
+ */
+static void
+prv_go_to_next_packet_rx_state(lwpkt_t* pkt) {
+    lwpkt_state_t next_state = LWPKT_STATE_END;
+    switch (pkt->m.state) {
+        case LWPKT_STATE_START: {
+            /*
+             * 1. Go to addressing, if addressing is enabled.
+             * 2. Go to command parser, if it is enabled
+             * 3. Go to data length otherwise (always enabled)
+             * 4. Final option is to go directly to packet length check
+             */
+            if (CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_USE_ADDR, LWPKT_FLAG_USE_ADDR)) {
+                next_state = LWPKT_STATE_FROM;
+            } else if (CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_USE_FLAGS, LWPKT_FLAG_USE_FLAGS)) {
+                next_state = LWPKT_STATE_FLAGS;
+            } else if (CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_USE_CMD, LWPKT_FLAG_USE_CMD)) {
+                next_state = LWPKT_STATE_CMD;
+            } else {
+                next_state = LWPKT_STATE_LEN;
+            }
+            break;
+        }
+        case LWPKT_STATE_FROM: {
+            /* There is no other way but to handle second part of addressing */
+            next_state = LWPKT_STATE_TO;
+            break;
+        }
+        case LWPKT_STATE_TO: {
+            /*
+             * 1. Go to command parser, if it is enabled
+             * 2. Go to data length otherwise (always enabled)
+             * 3. Final option is to go directly to packet length check
+             */
+            if (CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_USE_FLAGS, LWPKT_FLAG_USE_FLAGS)) {
+                next_state = LWPKT_STATE_FLAGS;
+            } else if (CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_USE_CMD, LWPKT_FLAG_USE_CMD)) {
+                next_state = LWPKT_STATE_CMD;
+            } else {
+                next_state = LWPKT_STATE_LEN;
+            }
+            break;
+        }
+        case LWPKT_STATE_FLAGS: {
+            /*
+             * 1. Go to data length otherwise (always enabled)
+             * 2. Final option is to go directly to packet length check
+             */
+            if (CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_USE_CMD, LWPKT_FLAG_USE_CMD)) {
+                next_state = LWPKT_STATE_CMD;
+            } else {
+                next_state = LWPKT_STATE_LEN;
+            }
+            break;
+        }
+        case LWPKT_STATE_CMD: {
+            next_state = LWPKT_STATE_LEN;
+            break;
+        }
+        case LWPKT_STATE_LEN: {
+            /*
+             * If data length is zero, skip data part
+             *
+             * 1. Go to data length otherwise (always enabled)
+             * 2. Final option is to go directly to packet length check
+             * 
+             * Go to data, if present
+             */
+            if (pkt->m.len > 0) {
+                next_state = LWPKT_STATE_DATA;
+            } else if (CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_USE_CRC, LWPKT_FLAG_USE_CRC)) {
+                next_state = LWPKT_STATE_CRC;
+            } else {
+                next_state = LWPKT_STATE_STOP;
+            }
+            break;
+        }
+        case LWPKT_STATE_DATA: {
+            /*
+             * 1. Go to CRC if enabled
+             * 2. Skip CRC and go to stop
+             */
+            if (CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_USE_CRC, LWPKT_FLAG_USE_CRC)) {
+                next_state = LWPKT_STATE_CRC;
+            } else {
+                next_state = LWPKT_STATE_STOP;
+            }
+            break;
+        }
+        case LWPKT_STATE_CRC: {
+            /* Do nothing, this case is handled in the read operations directly */
+            break;
+        }
+        case LWPKT_STATE_STOP: {
+            next_state = LWPKT_STATE_START;
+            break;
+        }
+        default: {
+        }
+    }
+    if (next_state != LWPKT_STATE_END) {
+        LWPKT_SET_STATE(pkt, next_state);
+    }
+}
+
+/**
  * \brief           Initialize packet instance and set device address
  * \param[in]       pkt: Packet instance
  * \param[in]       tx_rb: TX LwRB instance for data write
@@ -235,20 +344,7 @@ lwpkt_read(lwpkt_t* pkt) {
                 if (b == LWPKT_START_BYTE) {
                     LWPKT_RESET(pkt); /* Reset instance and make it ready for receiving */
                     INIT_CRC(pkt, &pkt->m.crc);
-
-                    /*
-                     * 1. Go to addressing, if addressing is enabled.
-                     * 2. Go to command parser, if it is enabled
-                     * 3. Go to data length otherwise (always enabled)
-                     */
-                    LWPKT_SET_STATE(
-                        pkt, CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_USE_ADDR, LWPKT_FLAG_USE_ADDR)
-                                 ? LWPKT_STATE_FROM
-                                 : (CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_USE_FLAGS, LWPKT_FLAG_USE_FLAGS)
-                                        ? LWPKT_STATE_FLAGS
-                                        : (CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_USE_CMD, LWPKT_FLAG_USE_CMD)
-                                               ? LWPKT_STATE_CMD
-                                               : LWPKT_STATE_LEN)));
+                    prv_go_to_next_packet_rx_state(pkt);
                 }
                 break;
             }
@@ -268,7 +364,7 @@ lwpkt_read(lwpkt_t* pkt) {
                 /* Check if ready to move forward */
                 if (!LWPKT_CFG_ADDR_EXTENDED /* Default mode goes straight with single byte */
                     || (LWPKT_CFG_ADDR_EXTENDED && (b & 0x80U) == 0x00)) { /* Extended mode must have MSB set to 0 */
-                    LWPKT_SET_STATE(pkt, LWPKT_STATE_TO);
+                    prv_go_to_next_packet_rx_state(pkt);
                 }
                 break;
             }
@@ -287,12 +383,7 @@ lwpkt_read(lwpkt_t* pkt) {
                 /* Check if ready to move forward */
                 if (!CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_ADDR_EXTENDED, LWPKT_FLAG_ADDR_EXTENDED)
                     || (b & 0x80U) == 0x00) { /* Extended mode must have MSB set to 0 */
-                    LWPKT_SET_STATE(pkt,
-                                    CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_USE_FLAGS, LWPKT_FLAG_USE_FLAGS)
-                                        ? LWPKT_STATE_FLAGS
-                                        : (CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_USE_CMD, LWPKT_FLAG_USE_CMD)
-                                               ? LWPKT_STATE_CMD
-                                               : LWPKT_STATE_LEN));
+                    prv_go_to_next_packet_rx_state(pkt);
                 }
                 break;
             }
@@ -302,9 +393,7 @@ lwpkt_read(lwpkt_t* pkt) {
                 pkt->m.flags |= (b & 0x7FU) << ((size_t)7U * (size_t)pkt->m.index++);
                 ADD_IN_TO_CRC(pkt, &pkt->m.crc, &b, 1U);
                 if ((b & 0x80U) == 0) {
-                    LWPKT_SET_STATE(pkt, CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_USE_CMD, LWPKT_FLAG_USE_CMD)
-                                             ? LWPKT_STATE_CMD
-                                             : LWPKT_STATE_STOP);
+                    prv_go_to_next_packet_rx_state(pkt);
                 }
                 break;
             }
@@ -313,7 +402,7 @@ lwpkt_read(lwpkt_t* pkt) {
             case LWPKT_STATE_CMD: {
                 pkt->m.cmd = b;
                 ADD_IN_TO_CRC(pkt, &pkt->m.crc, &b, 1);
-                LWPKT_SET_STATE(pkt, LWPKT_STATE_LEN);
+                prv_go_to_next_packet_rx_state(pkt);
                 break;
             }
 #endif /* LWPKT_CFG_USE_CMD */
@@ -323,14 +412,7 @@ lwpkt_read(lwpkt_t* pkt) {
 
                 /* Last length bytes has MSB bit set to 0 */
                 if ((b & 0x80U) == 0) {
-                    if (pkt->m.len == 0) {
-                        LWPKT_SET_STATE(pkt,
-                                        CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_USE_CRC, LWPKT_FLAG_USE_CRC)
-                                            ? LWPKT_STATE_CRC
-                                            : LWPKT_STATE_STOP);
-                    } else {
-                        LWPKT_SET_STATE(pkt, LWPKT_STATE_DATA);
-                    }
+                    prv_go_to_next_packet_rx_state(pkt);
                 }
                 break;
             }
@@ -339,10 +421,7 @@ lwpkt_read(lwpkt_t* pkt) {
                     pkt->data[pkt->m.index++] = b;
                     ADD_IN_TO_CRC(pkt, &pkt->m.crc, &b, 1U);
                     if (pkt->m.index == pkt->m.len) {
-                        LWPKT_SET_STATE(pkt,
-                                        CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_USE_CRC, LWPKT_FLAG_USE_CRC)
-                                            ? LWPKT_STATE_CRC
-                                            : LWPKT_STATE_STOP);
+                        prv_go_to_next_packet_rx_state(pkt);
                     }
                 } else {
                     LWPKT_RESET(pkt);
@@ -365,7 +444,7 @@ lwpkt_read(lwpkt_t* pkt) {
             }
 #endif /* LWPKT_CFG_USE_CRC */
             case LWPKT_STATE_STOP: {
-                LWPKT_SET_STATE(pkt, LWPKT_STATE_START); /* Reset packet state */
+                prv_go_to_next_packet_rx_state(pkt);
                 if (b == LWPKT_STOP_BYTE) {
                     res = lwpktVALID; /* Packet fully valid, take data from it */
                     goto retpre;

@@ -62,6 +62,7 @@ typedef enum {
     LWPKT_STATE_DATA,         /*!< Packet waits for actual data bytes */
     LWPKT_STATE_CRC,          /*!< Packet waits for CRC data */
     LWPKT_STATE_STOP,         /*!< Packet waits for stop byte */
+    LWPKT_STATE_END,          /*!< Last entry */
 } lwpkt_state_t;
 
 /**
