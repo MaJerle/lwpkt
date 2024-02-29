@@ -34,10 +34,10 @@
 #ifndef LWPKT_HDR_OPTS_H
 #define LWPKT_HDR_OPTS_H
 
-#define LWPKT_CFG_USE_ADDR      2
-#define LWPKT_CFG_ADDR_EXTENDED 2
-#define LWPKT_CFG_USE_CMD       2
-#define LWPKT_CFG_USE_CRC       2
-#define LWPKT_CFG_USE_FLAGS     2
+#define LWPKT_CFG_USE_ADDR      0
+#define LWPKT_CFG_ADDR_EXTENDED 0
+#define LWPKT_CFG_USE_CMD       0
+#define LWPKT_CFG_USE_CRC       0
+#define LWPKT_CFG_USE_FLAGS     0
 
 #endif /* LWPKT_HDR_OPTS_H */

@@ -275,7 +275,7 @@ lwpkt_init(lwpkt_t* pkt, lwrb_t* tx_rb, lwrb_t* rx_rb) {
 
     pkt->tx_rb = tx_rb;
     pkt->rx_rb = rx_rb;
-    pkt->flags |= 0xFF;
+    pkt->flags |= 0xFFU;
 
     return lwpktOK;
 }
@@ -334,11 +334,8 @@ lwpkt_read(lwpkt_t* pkt) {
             case LWPKT_STATE_FROM: {
                 ADD_IN_TO_CRC(pkt, &pkt->m.crc, &b, 1);
 
-                if (0) {
-#if LWPKT_CFG_ADDR_EXTENDED
-                } else if (CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_ADDR_EXTENDED, LWPKT_FLAG_ADDR_EXTENDED)) {
+                if (CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_ADDR_EXTENDED, LWPKT_FLAG_ADDR_EXTENDED)) {
                     pkt->m.from |= (uint8_t)(b & 0x7FU) << ((size_t)7U * (size_t)pkt->m.index++);
-#endif /* LWPKT_CFG_ADDR_EXTENDED */
                 } else {
                     pkt->m.from = b;
                 }
@@ -353,11 +350,8 @@ lwpkt_read(lwpkt_t* pkt) {
             case LWPKT_STATE_TO: {
                 ADD_IN_TO_CRC(pkt, &pkt->m.crc, &b, 1);
 
-                if (0) {
-#if LWPKT_CFG_ADDR_EXTENDED
-                } else if (CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_ADDR_EXTENDED, LWPKT_FLAG_ADDR_EXTENDED)) {
+                if (CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_ADDR_EXTENDED, LWPKT_FLAG_ADDR_EXTENDED)) {
                     pkt->m.to |= (uint8_t)(b & 0x7FU) << ((size_t)7U * (size_t)pkt->m.index++);
-#endif /* !LWPKT_CFG_ADDR_EXTENDED */
                 } else {
                     pkt->m.to = b;
                 }
@@ -525,13 +519,9 @@ lwpkt_write(lwpkt_t* pkt,
         /* Addresses */
 #if LWPKT_CFG_USE_ADDR
         if (CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_USE_ADDR, LWPKT_FLAG_USE_ADDR)) {
-            if (0) {
-#if LWPKT_CFG_ADDR_EXTENDED
-                /* Dynamic configuration? */
-            } else if (CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_ADDR_EXTENDED, LWPKT_FLAG_ADDR_EXTENDED)) {
+            if (CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_ADDR_EXTENDED, LWPKT_FLAG_ADDR_EXTENDED)) {
                 CALC_BYTES_NUM_FOR_LEN(min_mem, pkt->addr);
                 CALC_BYTES_NUM_FOR_LEN(min_mem, to);
-#endif /* !LWPKT_CFG_ADDR_EXTENDED */
             } else {
                 min_mem += 2U; /* Static configuration */
             }
@@ -544,21 +534,18 @@ lwpkt_write(lwpkt_t* pkt,
         }
 #endif /* LWPKT_CFG_USE_FLAGS */
 
-#if LWPKT_CFG_USE_CMD
         if (CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_USE_CMD, LWPKT_FLAG_USE_CMD)) {
             ++min_mem; /* CMD part */
         }
-#endif /* LWPKT_CFG_USE_CMD */
 
         /* Encode data length number + add actual data space requirement */
         CALC_BYTES_NUM_FOR_LEN(min_mem, len);
         min_mem += len; /* Data length */
 
-#if LWPKT_CFG_USE_CRC
+        /* CRC part */
         if (CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_USE_CRC, LWPKT_FLAG_USE_CRC)) {
-            ++min_mem; /* CRC part */
+            ++min_mem;
         }
-#endif /* LWPKT_CFG_USE_CRC */
 
         /* Verify enough memory */
         if (lwrb_get_free(pkt->tx_rb) < min_mem) {
