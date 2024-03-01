@@ -11,6 +11,7 @@
 - Add more recent version of LwRB
 - Fix compilation error if CRC mode is disabled
 - Add support for dynamic configuration, to support multiple LwPKT instances in one project
+- Add flags support to allow customer user flags in packet
 
 ## v1.2.0
 
