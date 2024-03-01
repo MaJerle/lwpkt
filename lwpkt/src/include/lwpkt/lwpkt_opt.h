@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (c) 2020 Tilen MAJERLE
+ * Copyright (c) 2024 Tilen MAJERLE
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -29,10 +29,10 @@
  * This file is part of LwPKT - Lightweight packet protocol library.
  *
  * Author:          Tilen MAJERLE <tilen@majerle.eu>
- * Version:         v1.2.0
+ * Version:         v1.3.0
  */
-#ifndef LWPKT_HDR_OPT_H
-#define LWPKT_HDR_OPT_H
+#ifndef LWPKT_OPT_HDR_H
+#define LWPKT_OPT_HDR_H
 
 /* Uncomment to ignore user options (or set macro in compiler flags) */
 /* #define LWPKT_IGNORE_USER_OPTS */
@@ -53,11 +53,29 @@ extern "C" {
  */
 
 /**
+ * \brief           Memory set function
+ * 
+ * \note            Function footprint is the same as \ref memset
+ */
+#ifndef LWPKT_MEMSET
+#define LWPKT_MEMSET(dst, val, len) memset((dst), (val), (len))
+#endif
+
+/**
+ * \brief           Memory copy function
+ * 
+ * \note            Function footprint is the same as \ref memcpy
+ */
+#ifndef LWPKT_MEMCPY
+#define LWPKT_MEMCPY(dst, src, len) memcpy((dst), (src), (len))
+#endif
+
+/**
  * \brief           Maximum length of `data` part of the packet in units of bytes
  *
  */
 #ifndef LWPKT_CFG_MAX_DATA_LEN
-#define LWPKT_CFG_MAX_DATA_LEN                  256
+#define LWPKT_CFG_MAX_DATA_LEN 256
 #endif
 
 /**
@@ -65,7 +83,7 @@ extern "C" {
  *
  */
 #ifndef LWPKT_CFG_ADDR_BROADCAST
-#define LWPKT_CFG_ADDR_BROADCAST                0xFF
+#define LWPKT_CFG_ADDR_BROADCAST 0xFF
 #endif
 
 /**
@@ -73,9 +91,15 @@ extern "C" {
  *
  * This features is useful if communication is between 2 devices exclusively,
  * without addressing requirements
+ * 
+ * Configuration options:
+ *  - `0`: Feature is globally disabled in the library
+ *  - `1`: Feature is globally enabled in the library
+ *  - `2`: Feature is dynamically enabled/disabled in the library, according to the LwPKT object instance.
+ *      If set to `2`, feature is by default enabled, but it can be disabled with appropriate API function.
  */
 #ifndef LWPKT_CFG_USE_ADDR
-#define LWPKT_CFG_USE_ADDR                      1
+#define LWPKT_CFG_USE_ADDR 1
 #endif
 
 /**
@@ -87,26 +111,61 @@ extern "C" {
  * When disabled, simple `8-bit` address is fixed with single byte.
  *
  * Feature is disabled by default to keep architecture compatibility
+ * 
+ * Configuration options:
+ *  - `0`: Feature is globally disabled in the library
+ *  - `1`: Feature is globally enabled in the library
+ *  - `2`: Feature is dynamically enabled/disabled in the library, according to the LwPKT object instance.
+ *      If set to `2`, feature is by default enabled, but it can be disabled with appropriate API function.
  */
 #ifndef LWPKT_CFG_ADDR_EXTENDED
-#define LWPKT_CFG_ADDR_EXTENDED                 0
+#define LWPKT_CFG_ADDR_EXTENDED 0
 #endif
 
 /**
  * \brief           Enables `1` or disables `0` `cmd` field in the protocol.
  *
  * When disabled, command part is not used
+ * 
+ * Configuration options:
+ *  - `0`: Feature is globally disabled in the library
+ *  - `1`: Feature is globally enabled in the library
+ *  - `2`: Feature is dynamically enabled/disabled in the library, according to the LwPKT object instance.
+ *      If set to `2`, feature is by default enabled, but it can be disabled with appropriate API function.
  */
 #ifndef LWPKT_CFG_USE_CMD
-#define LWPKT_CFG_USE_CMD                       1
+#define LWPKT_CFG_USE_CMD 1
 #endif
 
 /**
  * \brief           Enables `1` or disables `0` CRC check in the protocol.
- *
+ * 
+ * Configuration options:
+ *  - `0`: Feature is globally disabled in the library
+ *  - `1`: Feature is globally enabled in the library
+ *  - `2`: Feature is dynamically enabled/disabled in the library, according to the LwPKT object instance.
+ *      If set to `2`, feature is by default enabled, but it can be disabled with appropriate API function.
  */
 #ifndef LWPKT_CFG_USE_CRC
-#define LWPKT_CFG_USE_CRC                       1
+#define LWPKT_CFG_USE_CRC 1
+#endif
+
+/**
+ * \brief           Enables `1` or disables `0` flags field in the protocol.
+ * 
+ * When enabled, multi-byte addresses are supported with MSB codification.
+ * Maximum address is limited to `32-bits`.
+ *
+ * Feature is disabled by default to keep architecture compatibility
+ * 
+ * Configuration options:
+ *  - `0`: Feature is globally disabled in the library
+ *  - `1`: Feature is globally enabled in the library
+ *  - `2`: Feature is dynamically enabled/disabled in the library, according to the LwPKT object instance.
+ *      If set to `2`, feature is by default enabled, but it can be disabled with appropriate API function.
+ */
+#ifndef LWPKT_CFG_USE_FLAGS
+#define LWPKT_CFG_USE_FLAGS 0
 #endif
 
 /**
@@ -116,7 +175,7 @@ extern "C" {
  * Used with \ref lwpkt_process function
  */
 #ifndef LWPKT_CFG_PROCESS_INPROG_TIMEOUT
-#define LWPKT_CFG_PROCESS_INPROG_TIMEOUT        100
+#define LWPKT_CFG_PROCESS_INPROG_TIMEOUT 100
 #endif
 
 /**
@@ -124,7 +183,7 @@ extern "C" {
  *
  */
 #ifndef LWPKT_CFG_USE_EVT
-#define LWPKT_CFG_USE_EVT                       1
+#define LWPKT_CFG_USE_EVT 1
 #endif
 
 /**
@@ -135,4 +194,4 @@ extern "C" {
 }
 #endif /* __cplusplus */
 
-#endif /* LWPKT_HDR_OPT_H */
+#endif /* LWPKT_OPT_HDR_H */

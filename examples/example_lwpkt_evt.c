@@ -38,6 +38,9 @@ my_lwpkt_evt_fn(lwpkt_t* pkt, lwpkt_evt_type_t type) {
             printf("Timeout detected during read operation..\r\n");
             break;
         }
+        default: {
+            break;
+        }
     }
 }
 
@@ -72,12 +75,15 @@ example_lwpkt_evt(void) {
      */
     res = lwpkt_write(&pkt,
 #if LWPKT_CFG_USE_ADDR
-        0x11,                       /* End address to whom to send */
-#endif /* LWPKT_CFG_USE_ADDR */
+                      0x11, /* End address to whom to send */
+#endif                      /* LWPKT_CFG_USE_ADDR */
+#if LWPKT_CFG_USE_FLAGS
+                      0x12345678, /* Custom flags added to the packet */
+#endif                            /* LWPKT_CFG_USE_FLAGS */
 #if LWPKT_CFG_USE_CMD
-        0x85,                       /* Command type */
-#endif /* LWPKT_CFG_USE_CMD */
-        data, strlen(data));        /* Length of data and actual data */
+                      0x85,                /* Command type */
+#endif                                     /* LWPKT_CFG_USE_CMD */
+                      data, strlen(data)); /* Length of data and actual data */
 
     /*
      * LwPKT wrote data to pkt_tx_rb ringbuffer
@@ -105,4 +111,6 @@ example_lwpkt_evt(void) {
     /* Now call process function instead */
     time = 100; /* Get_current_time_in_milliseconds */
     lwpkt_process(&pkt, time);
+
+    (void)res;
 }

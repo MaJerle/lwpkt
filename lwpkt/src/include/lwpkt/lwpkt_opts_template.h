@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (c) 2020 Tilen MAJERLE
+ * Copyright (c) 2024 Tilen MAJERLE
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -29,10 +29,10 @@
  * This file is part of LwPKT - Lightweight packet protocol library.
  *
  * Author:          Tilen MAJERLE <tilen@majerle.eu>
- * Version:         v1.2.0
+ * Version:         v1.3.0
  */
-#ifndef LWPKT_HDR_OPTS_H
-#define LWPKT_HDR_OPTS_H
+#ifndef LWPKT_OPTS_HDR_H
+#define LWPKT_OPTS_HDR_H
 
 /* Rename this file to "lwpkt_opts.h" for your application */
 
@@ -41,4 +41,4 @@
  * copy & replace here settings you want to change values
  */
 
-#endif /* LWPKT_HDR_OPTS_H */
+#endif /* LWPKT_OPTS_HDR_H */

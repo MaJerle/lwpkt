@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (c) 2020 Tilen MAJERLE
+ * Copyright (c) 2024 Tilen MAJERLE
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -34,11 +34,10 @@
 #ifndef LWPKT_HDR_OPTS_H
 #define LWPKT_HDR_OPTS_H
 
-/* Rename this file to "lwpkt_opts.h" for your application */
-
-/*
- * Open "include/lwpkt/lwpkt_opt.h" and
- * copy & replace here settings you want to change values
- */
+#define LWPKT_CFG_USE_ADDR      0
+#define LWPKT_CFG_ADDR_EXTENDED 0
+#define LWPKT_CFG_USE_CMD       0
+#define LWPKT_CFG_USE_CRC       0
+#define LWPKT_CFG_USE_FLAGS     0
 
 #endif /* LWPKT_HDR_OPTS_H */

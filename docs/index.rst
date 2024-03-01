@@ -16,7 +16,7 @@ LwPKT is a generic packet protocol library optimized for embedded systems.
 Features
 ^^^^^^^^
 
-* Written in ANSI C99, compatible with ``size_t`` for size data types
+* Written in C (C11), compatible with ``size_t`` for size data types
 * Platform independent, no architecture specific code
 * Uses `LwRB <https://github.com/MaJerle/lwrb>`_ library for data read/write operations
 * Support for events on packet ready, read or write operation
@@ -27,6 +27,14 @@ Features
 * Variable data length to support theoretically unlimited packet length
 * CRC check to handle data transmission errors
 * User friendly MIT license
+
+Applications
+^^^^^^^^^^^^
+
+To name a few:
+
+* Communication in RS-485 network between various devices
+* Low-level point to point packet communication (UART, USB, ethernet, ...)
 
 Requirements
 ^^^^^^^^^^^^
@@ -58,8 +66,32 @@ Table of contents
 
 .. toctree::
     :maxdepth: 2
+    :caption: Contents
 
     self
     get-started/index
     user-manual/index
     api-reference/index
+    changelog/index
+    authors/index
+
+.. toctree::
+    :maxdepth: 2
+    :caption: Other projects
+    :hidden:
+
+    LwBTN - Button manager <https://github.com/MaJerle/lwbtn>
+    LwDTC - DateTimeCron <https://github.com/MaJerle/lwdtc>
+    LwESP - ESP-AT library <https://github.com/MaJerle/lwesp>
+    LwEVT - Event manager <https://github.com/MaJerle/lwevt>
+    LwGPS - GPS NMEA parser <https://github.com/MaJerle/lwgps>
+    LwCELL - Cellular modem host AT library <https://github.com/MaJerle/lwcell>
+    LwJSON - JSON parser <https://github.com/MaJerle/lwjson>
+    LwMEM - Memory manager <https://github.com/MaJerle/lwmem>
+    LwOW - OneWire with UART <https://github.com/MaJerle/lwow>
+    LwPKT - Packet protocol <https://github.com/MaJerle/lwpkt>
+    LwPRINTF - Printf <https://github.com/MaJerle/lwprintf>
+    LwRB - Ring buffer <https://github.com/MaJerle/lwrb>
+    LwSHELL - Shell <https://github.com/MaJerle/lwshell>
+    LwUTIL - Utility functions <https://github.com/MaJerle/lwutil>
+    LwWDG - RTOS task watchdog <https://github.com/MaJerle/lwwdg>

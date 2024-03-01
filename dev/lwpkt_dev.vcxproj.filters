@@ -21,16 +21,16 @@
     <ClCompile Include="main.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\libs\lwrb\src\lwrb\lwrb.c">
+    <ClCompile Include="..\libs\lwrb\src\lwrb\lwrb.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\lwpkt\src\lwpkt\lwpkt.c">
+    <ClCompile Include="..\lwpkt\src\lwpkt\lwpkt.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\examples\example_lwpkt.c">
+    <ClCompile Include="..\examples\example_lwpkt.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\examples\example_lwpkt_evt.c">
+    <ClCompile Include="..\examples\example_lwpkt_evt.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
