@@ -1,37 +1,35 @@
 {
-	"name": "LwPKT",
-	"version": "1.2.0",
-	"description": "Lightweight packet protocol library for communication implementation",
-	"keywords": "lwpkt, packet, protocol, manager, communication, com, lightweight, rs-485, rs-422, rs485, rs422, rs-232, rs232, uart, usart, lpuart",
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/MaJerle/lwpkt.git"
-	},
-	"authors": [
-		{
-			"name": "Tilen Majerle",
-			"email": "tilen@majerle.eu",
-			"url": "https://majerle.eu"
-		}
-	],
-	"license": "MIT",
-	"homepage": "https://github.com/MaJerle/lwpkt",
-	"dependencies": {
-
-	},
-	"frameworks": "*",
-	"platforms": "*",
-	"export": {
-		"exclude": [
-			".github",
-			"dev",
-			"docs",
-			"**/.vs",
-			"**/Debug",
-			"build",
-			"**/build"
-		]
-	},
+    "name": "LwPKT",
+    "version": "1.3.0",
+    "description": "Lightweight packet protocol library for communication implementation",
+    "keywords": "lwpkt, packet, protocol, manager, communication, com, lightweight, rs-485, rs-422, rs485, rs422, rs-232, rs232, uart, usart, lpuart",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/MaJerle/lwpkt.git"
+    },
+    "authors": [
+        {
+            "name": "Tilen Majerle",
+            "email": "tilen@majerle.eu",
+            "url": "https://majerle.eu"
+        }
+    ],
+    "license": "MIT",
+    "homepage": "https://github.com/MaJerle/lwpkt",
+    "dependencies": {},
+    "frameworks": "*",
+    "platforms": "*",
+    "export": {
+        "exclude": [
+            ".github",
+            "dev",
+            "docs",
+            "**/.vs",
+            "**/Debug",
+            "build",
+            "**/build"
+        ]
+    },
     "build": {
         "includeDir": "lwpkt/src/include"
     }
