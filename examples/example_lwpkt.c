@@ -60,9 +60,12 @@ example_lwpkt(void) {
      * fake data transmission by doing reading from TX buffer
      * and writing it to RX buffer
      */
+    printf("Tx RB content len: %u, content: ", (unsigned)lwrb_get_full(&pkt_tx_rb));
     while (lwrb_read(&pkt_tx_rb, &b, 1) == 1) {
+        printf("0x%02X, ", (unsigned)b);
         lwrb_write(&pkt_rx_rb, &b, 1);
     }
+    printf("\r\n");
 
     /*
      * Here we have our data in RX buffer

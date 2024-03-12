@@ -46,6 +46,13 @@ class LwPKT(object):
         if self.opt_crc:
             pass
 
+        # calc CRC
+        if self.opt_crc:
+            crc = 0
+            for val in data_out[1:]:
+                crc = self.crc_in(crc, val)
+            data_out.append(crc)
+
         # Packet ends here
         data_out.append(0x55)
         return data_out
@@ -62,14 +69,30 @@ class LwPKT(object):
             if num == 0:
                 break
         return out
+    
+    # Add crc entry and calculate output
+    # Aim is to get single byte entry
+    def crc_in(self, crc_old_val:int, new_byt:int) -> int:
+        for i in range(8):
+            m = (crc_old_val ^ new_byt) & 0x01
+            crc_old_val = crc_old_val >> 1
+            if m:
+                crc_old_val = crc_old_val ^ 0x8C
+            new_byt = new_byt >> 1
+        return crc_old_val
 
 if __name__ == '__main__':
     print('main')
     pkt = LwPKT()
 
-    data = bytearray()
-    data += struct.pack('<H', 0x3344)
+    data = bytearray("Hello World\r\n".encode('utf-8'))
     print('data', len(data))
-    packet = pkt.generate_packet(data, cmd=0x12, addr_to = 0x10, flags = 0x15)
+    pkt.our_addr = 0x12
+    pkt.opt_addr = True
+    pkt.opt_addr_ext = True
+    pkt.opt_cmd = True
+    pkt.opt_flags = True
+    pkt.opt_crc = True
+    packet = pkt.generate_packet(data, addr_to = 0x11, flags = 0x12345678, cmd=0x85)
     print('packet', len(packet))
     print('packet_data', ', '.join(['0x{:02X}'.format(i) for i in packet]))
