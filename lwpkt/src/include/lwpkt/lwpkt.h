@@ -83,7 +83,9 @@ typedef enum {
  * \brief           CRC structure for packet
  */
 typedef struct {
-    uint8_t crc; /*!< Current CRC value */
+    uint32_t bytes_cnt; /*!< Number of bytes inserted to CRC */
+    uint32_t crc_in;    /*!< Temporary data input, that can be constructed for multiple bytes (to support CRC32) */
+    uint32_t crc;       /*!< Current CRC value */
 } lwpkt_crc_t;
 
 /* Forward declaration */
@@ -148,8 +150,9 @@ typedef struct lwpkt {
     struct {
         lwpkt_state_t state; /*!< Actual packet state machine */
 #if LWPKT_CFG_USE_CRC || __DOXYGEN__
-        lwpkt_crc_t crc; /*!< Packet CRC byte */
-#endif                   /* LWPKT_CFG_USE_CRC || __DOXYGEN__ */
+        lwpkt_crc_t crc;   /*!< Packet CRC object */
+        uint32_t crc_data; /*!< CRC data received from the other side */
+#endif                     /* LWPKT_CFG_USE_CRC || __DOXYGEN__ */
 #if LWPKT_CFG_USE_ADDR || __DOXYGEN__
         lwpkt_addr_t from; /*!< Device address packet is coming from */
         lwpkt_addr_t to;   /*!< Device address packet is intended for */
@@ -185,6 +188,7 @@ lwpktr_t lwpkt_set_evt_fn(lwpkt_t* pkt, lwpkt_evt_fn evt_fn);
 
 /* Functions available as conditional build */
 void lwpkt_set_crc_enabled(lwpkt_t* pkt, uint8_t enable);
+void lwpkt_set_crc32_enabled(lwpkt_t* pkt, uint8_t enable);
 void lwpkt_set_addr_enabled(lwpkt_t* pkt, uint8_t enable);
 void lwpkt_set_addr_extended_enabled(lwpkt_t* pkt, uint8_t enable);
 void lwpkt_set_cmd_enabled(lwpkt_t* pkt, uint8_t enable);

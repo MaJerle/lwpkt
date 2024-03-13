@@ -8,10 +8,11 @@
 
 extern void example_lwpkt(void);
 extern void example_lwpkt_evt(void);
+extern void test_lwpkt(void);
 
 int
 main() {
-    example_lwpkt();
+    test_lwpkt();
     //  example_lwpkt_evt();
     return 0;
 }

@@ -15,6 +15,7 @@ else()
         ${CMAKE_CURRENT_LIST_DIR}/libs/lwrb/src/lwrb/lwrb.c
         ${CMAKE_CURRENT_LIST_DIR}/examples/example_lwpkt.c
         ${CMAKE_CURRENT_LIST_DIR}/examples/example_lwpkt_evt.c
+        ${CMAKE_CURRENT_LIST_DIR}/test/lwpkt_test.c
     )
 
     # Add key include paths

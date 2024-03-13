@@ -104,6 +104,7 @@ extern "C" {
 
 /**
  * \brief           Enables `1` or disables `0` extended address length.
+ * \note            \ref LWPKT_CFG_USE_ADDR must be enabled for this feature to work
  *
  * When enabled, multi-byte addresses are supported with MSB codification.
  * Maximum address is limited to `32-bits`.
@@ -148,6 +149,22 @@ extern "C" {
  */
 #ifndef LWPKT_CFG_USE_CRC
 #define LWPKT_CFG_USE_CRC 1
+#endif
+
+/**
+ * \brief           Enables `1` or disables `0` CRC-32 type.
+ * \note            \ref LWPKT_CFG_USE_CRC must be enabled for this feature to work
+ * 
+ * It controls if CRC type is set to `8-bits` or `32-bits`
+ * 
+ * Configuration options:
+ *  - `0`: CRC is ˙8-bits`, fixed value. 
+ *  - `1`: Feature is globally enabled in the library and CRC is set fixed to `32-bits`
+ *  - `2`: Feature is dynamically enabled/disabled in the library, according to the LwPKT object instance.
+ *      If set to `2`, feature is by default enabled, but it can be disabled with appropriate API function.
+ */
+#ifndef LWPKT_CFG_CRC32
+#define LWPKT_CFG_CRC32 0
 #endif
 
 /**
