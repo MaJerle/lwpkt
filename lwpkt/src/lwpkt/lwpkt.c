@@ -53,8 +53,8 @@
 #define LWPKT_STOP_BYTE  0x55
 
 /* Polynomial */
-#define CRC_POLY_32      0x04C11DB7UL
-#define CRC_POLY_8       0x8C
+#define CRC_POLY_32      0xEDB88320UL /* Reversed 0x04C11DB7 */
+#define CRC_POLY_8       0x8CUL
 
 #if LWPKT_CFG_USE_CRC
 #define WRITE_WITH_CRC(pkt, crc, tx_rb, b, len)                                                                        \
@@ -125,7 +125,7 @@
         uint32_t local_var = (var_num);                                                                                \
         do {                                                                                                           \
             uint8_t byt = (local_var & 0x7FU) | (local_var > 0x7FU ? 0x80U : 0);                                       \
-            WRITE_WITH_CRC(pkt, &crc, (pkt)->tx_rb, &b, 1);                                                            \
+            WRITE_WITH_CRC((pkt), &crc, (pkt)->tx_rb, &b, 1);                                                          \
             local_var >>= (uint8_t)7U;                                                                                 \
         } while (local_var > 0);                                                                                       \
     } while (0)
@@ -170,23 +170,17 @@ prv_crc_in(lwpkt_t* pkt, lwpkt_crc_t* crcobj, const void* inp, const size_t len)
     }
 
     for (size_t i = 0; i < len; ++i, ++p_data) {
-        if (CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_CRC32, LWPKT_FLAG_CRC32)) {
-            crcobj->crc_in |= *p_data << 8 * (3 - (crcobj->bytes_cnt & 0x03UL));
-            ++crcobj->bytes_cnt;
-
-            if ((crcobj->bytes_cnt & 0x03) == 0) {
-                crcobj->crc = prv_crc_calc_one(crcobj->crc, crcobj->crc_in, CRC_POLY_32);
-                crcobj->crc_in = 0;
-            }
-        } else {
-            crcobj->crc = prv_crc_calc_one(crcobj->crc, *p_data, CRC_POLY_8);
-        }
+        crcobj->crc = prv_crc_calc_one(
+            crcobj->crc, *p_data,
+            CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_CRC32, LWPKT_FLAG_CRC32) ? CRC_POLY_32 : CRC_POLY_8);
     }
     return crcobj->crc;
 }
 
 /**
- * \brief           Finish the CRC calculation
+ * \brief           Finish the CRC calculation.
+ * When configured to CRC-32 bit, inverse the output
+ * 
  * \param           pkt: LwPKT object
  * \param           crcobj: CRC object
  * \return          CRC result
@@ -194,10 +188,7 @@ prv_crc_in(lwpkt_t* pkt, lwpkt_crc_t* crcobj, const void* inp, const size_t len)
 static uint32_t
 prv_crc_finish(lwpkt_t* pkt, lwpkt_crc_t* crcobj) {
     if (CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_CRC32, LWPKT_FLAG_CRC32)) {
-        if ((crcobj->bytes_cnt & 0x03) != 0) {
-            crcobj->crc = prv_crc_calc_one(crcobj->crc, crcobj->crc_in, CRC_POLY_32);
-            crcobj->crc_in = 0;
-        }
+        crcobj->crc ^= 0xFFFFFFFF;
     }
     return crcobj->crc;
 }
@@ -211,6 +202,11 @@ static void
 prv_crc_init(lwpkt_t* pkt, lwpkt_crc_t* crcobj) {
     (void)pkt;
     LWPKT_MEMSET(crcobj, 0x00, sizeof(*crcobj));
+
+    /* Set default value */
+    if (CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_CRC32, LWPKT_FLAG_CRC32)) {
+        crcobj->crc = 0xFFFFFFFFUL;
+    }
 }
 
 #endif /* LWPKT_CFG_USE_CRC */
@@ -629,12 +625,6 @@ lwpkt_write(lwpkt_t* pkt,
         if (0) {
 #if LWPKT_CFG_ADDR_EXTENDED
         } else if (CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_ADDR_EXTENDED, LWPKT_FLAG_ADDR_EXTENDED)) {
-#if 0
-            /* FROM address */
-            WRITE_BYTES_VAR_ENCODED(pkt, pkt->addr);
-            /* FROM address */
-            WRITE_BYTES_VAR_ENCODED(pkt, to);
-#else
             addr = pkt->addr;
             do {
                 b = (addr & 0x7FU) | (addr > 0x7FU ? 0x80U : 0);
@@ -649,7 +639,6 @@ lwpkt_write(lwpkt_t* pkt,
                 WRITE_WITH_CRC(pkt, &crc, pkt->tx_rb, &b, 1);
                 addr >>= (uint8_t)7U;
             } while (addr > 0);
-#endif
         } else {
 #endif /* !LWPKT_CFG_ADDR_EXTENDED */
             WRITE_WITH_CRC(pkt, &crc, pkt->tx_rb, &pkt->addr, 1);

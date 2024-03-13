@@ -70,10 +70,10 @@ run_test(uint8_t conf_index, uint8_t use_addr, uint8_t use_addr_ext, uint8_t use
                       data, data_len); /* Length of data and actual data */
 
     /* */
-    printf(
-        "--\r\n Conf: %u, use_addr: %u, use_addr_ext: %u, use_flags: %u, use_cmd: %u, use_crc: %u, use_crc32: %u\r\n",
-        (unsigned)conf_index, (unsigned)use_addr, (unsigned)use_addr_ext, (unsigned)use_flags, (unsigned)use_cmd,
-        (unsigned)use_crc, (unsigned)use_crc32);
+    printf("--\r\n Conf: %u, use_addr: %u, use_addr_ext: %u, use_flags: %u, use_cmd: %u,"
+           " use_crc: %u, use_crc32: %u\r\n",
+           (unsigned)conf_index, (unsigned)use_addr, (unsigned)use_addr_ext, (unsigned)use_flags, (unsigned)use_cmd,
+           (unsigned)use_crc, (unsigned)use_crc32);
 
     /* Copy data from TX to RX buffer -> immitate receive operation */
     printf("LwRB len: %u, content: ", (unsigned)lwrb_get_full(&pkt_tx_rb));
@@ -133,8 +133,7 @@ run_test(uint8_t conf_index, uint8_t use_addr, uint8_t use_addr_ext, uint8_t use
  */
 void
 test_lwpkt(void) {
-
-    printf("---\r\nLwPKT test..\r\n\r\n");
+    printf("---\r\nLwPKT test.\r\n\r\n");
 
     /* Setup the lib */
     lwrb_init(&pkt_tx_rb, pkt_tx_rb_data, sizeof(pkt_tx_rb_data));
