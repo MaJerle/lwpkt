@@ -1,5 +1,10 @@
 import enum, struct
 
+'''
+This file is currently in the development 
+and shall not be used by the final application
+'''
+
 class LwPKT(object):
 
     '''
@@ -10,6 +15,7 @@ class LwPKT(object):
         self.opt_addr_ext = True
         self.opt_cmd = True
         self.opt_crc = True
+        self.opt_crc32 = True
         self.opt_flags = True
         self.our_addr = 0x12
 
@@ -42,16 +48,16 @@ class LwPKT(object):
         if len(data) > 0:
             data_out += data
 
-        # Calculate CRC
+        # Calc CRC of all data (except start byte)
         if self.opt_crc:
-            pass
-
-        # calc CRC
-        if self.opt_crc:
-            crc = 0
+            crc = 0xFFFFFFFF if self.opt_crc32 else 0
             for val in data_out[1:]:
                 crc = self.crc_in(crc, val)
-            data_out.append(crc)
+            if self.opt_crc32:
+                crc = crc ^ 0xFFFFFFFF
+                data_out += struct.pack('<I', crc)
+            else:
+                data_out.append(crc)
 
         # Packet ends here
         data_out.append(0x55)
@@ -77,7 +83,7 @@ class LwPKT(object):
             m = (crc_old_val ^ new_byt) & 0x01
             crc_old_val = crc_old_val >> 1
             if m:
-                crc_old_val = crc_old_val ^ 0x8C
+                crc_old_val = crc_old_val ^ (0xEDB88320 if self.opt_crc32 else 0x8C)
             new_byt = new_byt >> 1
         return crc_old_val
 
@@ -87,12 +93,13 @@ if __name__ == '__main__':
 
     data = bytearray("Hello World\r\n".encode('utf-8'))
     print('data', len(data))
-    pkt.our_addr = 0x12
+    pkt.our_addr = 0x12345678
     pkt.opt_addr = True
     pkt.opt_addr_ext = True
     pkt.opt_cmd = True
     pkt.opt_flags = True
     pkt.opt_crc = True
-    packet = pkt.generate_packet(data, addr_to = 0x11, flags = 0x12345678, cmd=0x85)
+
+    packet = pkt.generate_packet(data, addr_to = 0x87654321, flags = 0xACCE550F, cmd=0x85)
     print('packet', len(packet))
     print('packet_data', ', '.join(['0x{:02X}'.format(i) for i in packet]))

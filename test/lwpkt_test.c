@@ -7,7 +7,7 @@ static lwrb_t pkt_tx_rb, pkt_rx_rb;
 static uint8_t pkt_tx_rb_data[256], pkt_rx_rb_data[256];
 
 /* Data to read and write */
-static const char* data = "Hello World123456789\r\n";
+static const char* data = "Hello World\r\n";
 
 static uint8_t
 run_test(uint8_t conf_index, uint8_t use_addr, uint8_t use_addr_ext, uint8_t use_flags, uint8_t use_cmd,
