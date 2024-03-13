@@ -69,5 +69,14 @@
             },
             "problemMatcher": []
         },
+        {
+            "label": "Python: Run lwpkt.py script",
+            "type": "shell",
+            "command": "python lwpkt.py",
+            "options": {
+                "cwd": "${workspaceFolder}/python"
+            },
+            "problemMatcher": []
+        },
     ]
 }
