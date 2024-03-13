@@ -3,6 +3,7 @@
 ## Develop
 
 - Add python file prototype.
+- Add support for `CRC-32` with `LWPKT_CFG_CRC32` option
 
 ## v1.3.0
 
