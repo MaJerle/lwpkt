@@ -87,11 +87,7 @@
         (p)->evt_fn((p), (t));                                                                                         \
     }
 #else /* LWPKT_CFG_USE_EVT */
-#define SEND_EVT(p, t)                                                                                                 \
-    do {                                                                                                               \
-        (void)(p);                                                                                                     \
-        (void)(t);                                                                                                     \
-    } while (0)
+#define SEND_EVT(p, t)
 #endif /* !LWPKT_CFG_USE_EVT */
 
 /* Flags for dynamically settable features in the library */
@@ -117,17 +113,6 @@
             ++(num_var);                                                                                               \
             len_local >>= (uint8_t)7U;                                                                                 \
         } while (len_local > 0U);                                                                                      \
-    } while (0)
-
-/* Writes data in variable encoded format */
-#define WRITE_BYTES_VAR_ENCODED(pkt, var_num)                                                                          \
-    do {                                                                                                               \
-        uint32_t local_var = (var_num);                                                                                \
-        do {                                                                                                           \
-            uint8_t byt = (local_var & 0x7FU) | (local_var > 0x7FU ? 0x80U : 0);                                       \
-            WRITE_WITH_CRC((pkt), &crc, (pkt)->tx_rb, &b, 1);                                                          \
-            local_var >>= (uint8_t)7U;                                                                                 \
-        } while (local_var > 0);                                                                                       \
     } while (0)
 
 #if LWPKT_CFG_USE_CRC
@@ -210,6 +195,26 @@ prv_crc_init(lwpkt_t* pkt, lwpkt_crc_t* crcobj) {
 }
 
 #endif /* LWPKT_CFG_USE_CRC */
+
+/**
+ * \brief           Write data to the output stream, with variable length array
+ * 
+ * \param           pkt: Packet object
+ * \param           crc: CRC object
+ * \param           var_num: Number to encode
+ * \return          Number of bytes used to encode the number
+ */
+static uint8_t
+write_bytes_var_encoded(lwpkt_t* pkt, lwpkt_crc_t* crc, uint32_t var_num) {
+    uint8_t cnt = 0;
+    do {
+        uint8_t byt = (var_num & 0x7FU) | (var_num > 0x7FU ? 0x80U : 0);
+        WRITE_WITH_CRC(pkt, crc, pkt->tx_rb, &byt, 1);
+        var_num >>= (uint8_t)7U;
+        ++cnt;
+    } while (var_num > 0);
+    return cnt;
+}
 
 /**
  * \brief           Single function to define steps between packet states
@@ -556,9 +561,6 @@ lwpkt_write(lwpkt_t* pkt,
 #if LWPKT_CFG_USE_CRC
     lwpkt_crc_t crc;
 #endif /* LWPKT_CFG_USE_CRC */
-#if LWPKT_CFG_ADDR_EXTENDED
-    lwpkt_addr_t addr;
-#endif /* LWPKT_CFG_ADDR_EXTENDED */
     size_t org_len = len;
     uint8_t b;
 
@@ -625,20 +627,8 @@ lwpkt_write(lwpkt_t* pkt,
         if (0) {
 #if LWPKT_CFG_ADDR_EXTENDED
         } else if (CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_ADDR_EXTENDED, LWPKT_FLAG_ADDR_EXTENDED)) {
-            addr = pkt->addr;
-            do {
-                b = (addr & 0x7FU) | (addr > 0x7FU ? 0x80U : 0);
-                WRITE_WITH_CRC(pkt, &crc, pkt->tx_rb, &b, 1);
-                addr >>= (uint8_t)7U;
-            } while (addr > 0);
-
-            /* TO address */
-            addr = to;
-            do {
-                b = (addr & 0x7FU) | (addr > 0x7FU ? 0x80U : 0);
-                WRITE_WITH_CRC(pkt, &crc, pkt->tx_rb, &b, 1);
-                addr >>= (uint8_t)7U;
-            } while (addr > 0);
+            write_bytes_var_encoded(pkt, &crc, pkt->addr);
+            write_bytes_var_encoded(pkt, &crc, to);
         } else {
 #endif /* !LWPKT_CFG_ADDR_EXTENDED */
             WRITE_WITH_CRC(pkt, &crc, pkt->tx_rb, &pkt->addr, 1);
@@ -650,11 +640,7 @@ lwpkt_write(lwpkt_t* pkt,
 #if LWPKT_CFG_USE_FLAGS
     /* Flags part */
     if (CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_USE_FLAGS, LWPKT_FLAG_USE_FLAGS)) {
-        do {
-            b = (flags & 0x7FU) | (flags > 0x7FU ? 0x80U : 0);
-            WRITE_WITH_CRC(pkt, &crc, pkt->tx_rb, &b, 1);
-            flags >>= (uint8_t)7U;
-        } while (flags > 0);
+        write_bytes_var_encoded(pkt, &crc, flags);
     }
 #endif
 
@@ -666,11 +652,7 @@ lwpkt_write(lwpkt_t* pkt,
 #endif /* LWPKT_CFG_USE_CMD */
 
     /* Length bytes */
-    do {
-        b = (len & 0x7FU) | (len > 0x7FU ? 0x80U : 0);
-        WRITE_WITH_CRC(pkt, &crc, pkt->tx_rb, &b, 1);
-        len >>= 7U;
-    } while (len > 0);
+    write_bytes_var_encoded(pkt, &crc, len);
 
     /* Data bytes, but only if length more than 0 */
     if (org_len > 0) {
@@ -681,9 +663,8 @@ lwpkt_write(lwpkt_t* pkt,
     /* CRC byte */
     if (CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_USE_CRC, LWPKT_FLAG_USE_CRC)) {
         uint32_t crc_data = prv_crc_finish(pkt, &crc);
-        for (size_t i = 0; i < CRC_DATA_LEN(pkt); ++i) {
+        for (size_t i = 0; i < CRC_DATA_LEN(pkt); ++i, crc_data >>= 8UL) {
             uint8_t byt = crc_data & 0xFFUL;
-            crc_data >>= 8UL;
             lwrb_write(pkt->tx_rb, &byt, 1);
         }
     }
