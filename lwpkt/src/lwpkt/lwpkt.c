@@ -391,8 +391,8 @@ lwpkt_read(lwpkt_t* pkt) {
                 }
 
                 /* Check if ready to move forward */
-                if (!LWPKT_CFG_ADDR_EXTENDED /* Default mode goes straight with single byte */
-                    || (LWPKT_CFG_ADDR_EXTENDED && (b & 0x80U) == 0x00)) { /* Extended mode must have MSB set to 0 */
+                if (!CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_ADDR_EXTENDED, LWPKT_FLAG_ADDR_EXTENDED)
+                    || (b & 0x80U) == 0x00) { /* Extended mode must have MSB set to 0 */
                     prv_go_to_next_packet_rx_state(pkt);
                 }
                 break;
