@@ -83,9 +83,7 @@ typedef enum {
  * \brief           CRC structure for packet
  */
 typedef struct {
-    uint32_t bytes_cnt; /*!< Number of bytes inserted to CRC */
-    uint32_t crc_in;    /*!< Temporary data input, that can be constructed for multiple bytes (to support CRC32) */
-    uint32_t crc;       /*!< Current CRC value */
+    uint32_t crc; /*!< Current CRC value */
 } lwpkt_crc_t;
 
 /* Forward declaration */
