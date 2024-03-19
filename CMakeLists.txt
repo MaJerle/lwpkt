@@ -40,7 +40,7 @@ else()
     )
 
     # Add subdir with lwpkt and link to project
-    set(LWPKT_OPTS_DIR ${CMAKE_CURRENT_LIST_DIR}/dev)
+    set(LWPKT_OPTS_FILE ${CMAKE_CURRENT_LIST_DIR}/dev/lwpkt_opts.h)
     add_subdirectory(lwpkt)
     target_link_libraries(${PROJECT_NAME} lwpkt)
 endif()
