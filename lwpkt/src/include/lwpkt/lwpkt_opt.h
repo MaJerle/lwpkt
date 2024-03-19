@@ -111,7 +111,7 @@ extern "C" {
  *
  * When disabled, simple `8-bit` address is fixed with single byte.
  *
- * Feature is disabled by default to keep architecture compatibility
+ * \note            Feature is disabled by default to keep architecture compatibility
  * 
  * Configuration options:
  *  - `0`: Feature is globally disabled in the library
@@ -136,6 +136,26 @@ extern "C" {
  */
 #ifndef LWPKT_CFG_USE_CMD
 #define LWPKT_CFG_USE_CMD 1
+#endif
+
+/**
+ * \brief           Enables `1` or disables `0` extended command length.
+ * \note            \ref LWPKT_CFG_USE_CMD must be enabled for this feature to work
+ *
+ * When enabled, multi-byte command length is supported in the protocol and is variable length integer encoded.
+ * 
+ * When disabled, simple `8-bit` address is fixed with single byte.
+ *
+ * \note            Feature is disabled by default to keep architecture compatibility
+ * 
+ * Configuration options:
+ *  - `0`: Feature is globally disabled in the library
+ *  - `1`: Feature is globally enabled in the library
+ *  - `2`: Feature is dynamically enabled/disabled in the library, according to the LwPKT object instance.
+ *      If set to `2`, feature is by default enabled, but it can be disabled with appropriate API function.
+ */
+#ifndef LWPKT_CFG_CMD_EXTENDED
+#define LWPKT_CFG_CMD_EXTENDED 0
 #endif
 
 /**
@@ -173,7 +193,7 @@ extern "C" {
  * When enabled, multi-byte addresses are supported with MSB codification.
  * Maximum address is limited to `32-bits`.
  *
- * Feature is disabled by default to keep architecture compatibility
+ * \note            Feature is disabled by default to keep architecture compatibility
  * 
  * Configuration options:
  *  - `0`: Feature is globally disabled in the library

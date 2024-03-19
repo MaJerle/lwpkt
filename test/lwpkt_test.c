@@ -11,19 +11,20 @@ static const char* data = "Hello World\r\n";
 
 static uint8_t
 run_test(uint8_t conf_index, uint8_t use_addr, uint8_t use_addr_ext, uint8_t use_flags, uint8_t use_cmd,
-         uint8_t use_crc, uint8_t use_crc32) {
+         uint8_t use_cmd_ext, uint8_t use_crc, uint8_t use_crc32) {
     lwpktr_t res;
     uint8_t b;
     uint32_t our_addr = 0x12345678UL;
     uint32_t dest_addr = 0x87654321UL;
     uint32_t flags = 0xACCE550FUL;
-    uint32_t cmd = 0x85UL;
+    uint32_t cmd = 0x85542343UL;
     size_t data_len = strlen(data);
 
-    /* Limit to low-nibble for non-extended addresses */
+    /* Limit to low-nibble for non-extended addresses and command */
     if (!use_addr_ext) {
         our_addr &= 0xFFUL;
         dest_addr &= 0xFFUL;
+        cmd &= 0xFFUL;
     }
 
     /* Go to default state */
@@ -48,6 +49,7 @@ run_test(uint8_t conf_index, uint8_t use_addr, uint8_t use_addr_ext, uint8_t use
 #endif /* LWPKT_CFG_USE_FLAGS */
 #if LWPKT_CFG_USE_CMD == 2
     lwpkt_set_cmd_enabled(&pkt, use_cmd);
+    lwpkt_set_cmd_extended_enabled(&pkt, use_cmd_ext);
 #endif /* LWPKT_CFG_USE_CMD */
 #if LWPKT_CFG_USE_CRC == 2
     lwpkt_set_crc_enabled(&pkt, use_crc);
@@ -70,10 +72,10 @@ run_test(uint8_t conf_index, uint8_t use_addr, uint8_t use_addr_ext, uint8_t use
                       data, data_len); /* Length of data and actual data */
 
     /* */
-    printf("--\r\n Conf: %u, use_addr: %u, use_addr_ext: %u, use_flags: %u, use_cmd: %u,"
+    printf("--\r\n Conf: %u, use_addr: %u, use_addr_ext: %u, use_flags: %u, use_cmd: %u, use_cmd_ext: %u,"
            " use_crc: %u, use_crc32: %u\r\n",
            (unsigned)conf_index, (unsigned)use_addr, (unsigned)use_addr_ext, (unsigned)use_flags, (unsigned)use_cmd,
-           (unsigned)use_crc, (unsigned)use_crc32);
+           (unsigned)use_cmd_ext, (unsigned)use_crc, (unsigned)use_crc32);
 
     /* Copy data from TX to RX buffer -> immitate receive operation */
     printf("LwRB len: %u, content: ", (unsigned)lwrb_get_full(&pkt_tx_rb));
@@ -141,7 +143,8 @@ test_lwpkt(void) {
     lwpkt_init(&pkt, &pkt_tx_rb, &pkt_rx_rb);
 
     /* Try */
-    for (size_t i = 0; i < 1 << 6; ++i) {
-        run_test(i + 1, !!(i & 0x01), !!(i & 0x02), !!(i & 0x04), !!(i & 0x08), !!(i & 0x10), !!(i & 0x20));
+    for (size_t i = 0; i < 1 << 7; ++i) {
+        run_test(i + 1, !!(i & 0x01), !!(i & 0x02), !!(i & 0x04), !!(i & 0x08), !!(i & 0x10), !!(i & 0x20),
+                 !!(i & 0x40));
     }
 }

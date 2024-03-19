@@ -4,6 +4,7 @@
 
 - Add python file prototype.
 - Add support for `CRC-32` with `LWPKT_CFG_CRC32` option
+- Add support for extended command length (variable length), configurable through `LWPKT_CFG_CMD_EXTENDED`
 
 ## v1.3.0
 

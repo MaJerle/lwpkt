@@ -43,6 +43,7 @@ class LwPKT(object):
         self.opt_addr = True
         self.opt_addr_ext = True
         self.opt_cmd = True
+        self.opt_cmd_ext = True
         self.opt_crc = True
         self.opt_crc32 = True
         self.opt_flags = True
@@ -80,7 +81,10 @@ class LwPKT(object):
 
         # Add command
         if self.opt_cmd:
-            data_out.append(cmd & 0xFF)
+            if self.opt_cmd_ext:
+                data_out += self.varint_encode(cmd)
+            else:
+                data_out.append(cmd & 0xFF)
 
         # Add data length, then actual data
         data_out += self.varint_encode(len(data))
@@ -183,8 +187,14 @@ class LwPKT(object):
 
                 case LwPKT.LwPKT_Packet.State.CMD:
                     self.rx.crc = self.crc_in(self.rx.crc, ch)
-                    self.rx.cmd = ch
-                    self.rx_go_to_next_state()
+                    if self.opt_cmd_ext:
+                        self.rx.cmd |= (ch & 0x7F) << (7 * self.rx.index)
+                        self.rx.index += 1
+                    else:
+                        self.rx.cmd = ch
+
+                    if not self.opt_cmd_ext or (ch & 0x80) == 0:
+                        self.rx_go_to_next_state()
 
                 case LwPKT.LwPKT_Packet.State.LEN:
                     self.rx.crc = self.crc_in(self.rx.crc, ch)
@@ -272,26 +282,30 @@ if __name__ == '__main__':
     print('main')
     pkt = LwPKT()
 
-    for i in range(1 << 6):
+    for i in range(1 << 7):
         data = bytearray("Hello World\r\n".encode('utf-8'))
 
         # Variables
         addr_to = 0x87654321
         addr_our = 0x12345678
         flags = 0xACCE550F
-        cmd = 0x85
+        cmd = 0x85542343
 
         # Setup config for data
-        pkt.opt_addr = True if i & 0x01 else False
-        pkt.opt_addr_ext = True if i & 0x02 else False
-        pkt.opt_flags = True if i & 0x04 else False
-        pkt.opt_cmd = True if i & 0x08 else False
-        pkt.opt_crc = True if i & 0x10 else False
-        pkt.opt_crc32 = True if i & 0x20 else False
+        pkt.opt_addr = i & 0x01
+        pkt.opt_addr_ext = i & 0x02
+        pkt.opt_flags = i & 0x04
+        pkt.opt_cmd = i & 0x08
+        pkt.opt_cmd_ext = i & 0x10
+        pkt.opt_crc = i & 0x20
+        pkt.opt_crc32 = i & 0x40
 
+        # Trim unused options
         if not pkt.opt_addr_ext:
             addr_to &= 0xFF
             addr_our &= 0xFF
+        if not pkt.opt_cmd_ext:
+            cmd &= 0xFF
 
         # Setup the values now
         pkt.our_addr = addr_our
@@ -320,6 +334,8 @@ if __name__ == '__main__':
                 elif pkt.opt_addr and decoded_packet.pkt_to != addr_to:
                     print('destination address mismatch!')
                 elif pkt.opt_flags and decoded_packet.flags != flags:
+                    print('flags mismatch!')
+                elif pkt.opt_cmd and decoded_packet.cmd != cmd:
                     print('flags mismatch!')
                 elif decoded_packet.len != len(data):
                     print('data len mismatch!')
