@@ -2,6 +2,14 @@
 
 ## Develop
 
+## v1.4.0
+
+- Add python file prototype.
+- Add support for `CRC-32` with `LWPKT_CFG_CRC32` option
+- Add support for extended command length (variable length), configurable through `LWPKT_CFG_CMD_EXTENDED`
+- Rework library CMake with removed INTERFACE type, replaced by static library
+- Added config flags `LWPKT_OFF`, `LWPKT_ON_STATIC` and `LWPKT_ON_DYNAMIC`
+
 ## v1.3.0
 
 - Split CMakeLists.txt files between library and executable

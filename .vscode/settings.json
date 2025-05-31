@@ -1,5 +1,6 @@
 {
     "files.associations": {
+        "*.lcdjson": "json",
         "lwevt_types.h": "c",
         "lwevt_type.h": "c",
         "lwevt.h": "c",
@@ -7,7 +8,11 @@
         "lwevt_opt.h": "c",
         "random": "c",
         "lwpkt.h": "c",
-        "lwpkt_opt.h": "c"
+        "lwpkt_opt.h": "c",
+        "array": "c",
+        "string": "c",
+        "string_view": "c",
+        "span": "c"
     },
     "esbonio.sphinx.confDir": ""
 }

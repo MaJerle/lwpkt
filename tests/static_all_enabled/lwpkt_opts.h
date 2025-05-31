@@ -29,15 +29,17 @@
  * This file is part of LwPKT - Lightweight packet protocol library.
  *
  * Author:          Tilen MAJERLE <tilen@majerle.eu>
- * Version:         v1.1.0
+ * Version:         v1.4.0
  */
 #ifndef LWPKT_HDR_OPTS_H
 #define LWPKT_HDR_OPTS_H
 
-#define LWPKT_CFG_USE_ADDR      0
-#define LWPKT_CFG_ADDR_EXTENDED 0
-#define LWPKT_CFG_USE_CMD       0
-#define LWPKT_CFG_USE_CRC       0
-#define LWPKT_CFG_USE_FLAGS     0
+#define LWPKT_CFG_USE_ADDR      LWPKT_ON_STATIC
+#define LWPKT_CFG_ADDR_EXTENDED LWPKT_ON_STATIC
+#define LWPKT_CFG_USE_CMD       LWPKT_ON_STATIC
+#define LWPKT_CFG_CMD_EXTENDED  LWPKT_ON_STATIC
+#define LWPKT_CFG_USE_CRC       LWPKT_ON_STATIC
+#define LWPKT_CFG_CRC32         LWPKT_ON_STATIC
+#define LWPKT_CFG_USE_FLAGS     LWPKT_ON_STATIC
 
 #endif /* LWPKT_HDR_OPTS_H */

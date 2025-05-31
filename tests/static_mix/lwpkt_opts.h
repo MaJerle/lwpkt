@@ -31,14 +31,15 @@
  * Author:          Tilen MAJERLE <tilen@majerle.eu>
  * Version:         v1.4.0
  */
-#ifndef LWPKT_OPTS_HDR_H
-#define LWPKT_OPTS_HDR_H
+#ifndef LWPKT_HDR_OPTS_H
+#define LWPKT_HDR_OPTS_H
 
-/* Rename this file to "lwpkt_opts.h" for your application */
+#define LWPKT_CFG_USE_ADDR      LWPKT_ON_DYNAMIC
+#define LWPKT_CFG_ADDR_EXTENDED LWPKT_OFF
+#define LWPKT_CFG_USE_CMD       LWPKT_ON_DYNAMIC
+#define LWPKT_CFG_CMD_EXTENDED  LWPKT_ON_DYNAMIC
+#define LWPKT_CFG_USE_CRC       LWPKT_ON_DYNAMIC
+#define LWPKT_CFG_CRC32         LWPKT_ON_DYNAMIC
+#define LWPKT_CFG_USE_FLAGS     LWPKT_ON_DYNAMIC
 
-/*
- * Open "include/lwpkt/lwpkt_opt.h" and
- * copy & replace here settings you want to change values
- */
-
-#endif /* LWPKT_OPTS_HDR_H */
+#endif /* LWPKT_HDR_OPTS_H */

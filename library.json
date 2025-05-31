@@ -1,6 +1,6 @@
 {
     "name": "LwPKT",
-    "version": "1.3.0",
+    "version": "1.4.0",
     "description": "Lightweight packet protocol library for communication implementation",
     "keywords": "lwpkt, packet, protocol, manager, communication, com, lightweight, rs-485, rs-422, rs485, rs422, rs-232, rs232, uart, usart, lpuart",
     "repository": {

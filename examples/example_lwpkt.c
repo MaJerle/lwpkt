@@ -12,7 +12,7 @@ static const char* data = "Hello World\r\n";
 /**
  * \brief           LwPKT example code
  */
-void
+int
 example_lwpkt(void) {
     lwpktr_t res;
     uint8_t b;
@@ -60,9 +60,12 @@ example_lwpkt(void) {
      * fake data transmission by doing reading from TX buffer
      * and writing it to RX buffer
      */
+    printf("Tx RB content len: %u, content: ", (unsigned)lwrb_get_full(&pkt_tx_rb));
     while (lwrb_read(&pkt_tx_rb, &b, 1) == 1) {
+        printf("0x%02X, ", (unsigned)b);
         lwrb_write(&pkt_rx_rb, &b, 1);
     }
+    printf("\r\n");
 
     /*
      * Here we have our data in RX buffer
@@ -114,4 +117,6 @@ example_lwpkt(void) {
     } else {
         printf("Packet is not valid!\r\n");
     }
+
+    return 0;
 }

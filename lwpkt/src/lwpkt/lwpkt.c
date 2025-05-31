@@ -29,112 +29,162 @@
  * This file is part of LwPKT - Lightweight packet protocol library.
  *
  * Author:          Tilen MAJERLE <tilen@majerle.eu>
- * Version:         v1.3.0
+ * Version:         v1.4.0
  */
 #include <stdint.h>
 #include <string.h>
 #include "lwpkt/lwpkt.h"
 #include "lwrb/lwrb.h"
 
-#define LWPKT_IS_VALID(p) ((p) != NULL)
-#define LWPKT_SET_STATE(p, s)                                                                                          \
-    do {                                                                                                               \
-        (p)->m.state = (s);                                                                                            \
-        (p)->m.index = 0;                                                                                              \
-    } while (0)
-#define LWPKT_RESET(p)                                                                                                 \
-    do {                                                                                                               \
-        LWPKT_MEMSET(&(p)->m, 0x00, sizeof((p)->m));                                                                   \
-        (p)->m.state = LWPKT_STATE_START;                                                                              \
-    } while (0)
+/* Validate user configuration */
+#if LWPKT_CFG_ADDR_EXTENDED && !LWPKT_CFG_USE_ADDR
+#error "LWPKT_CFG_ADDR_EXTENDED must be disabled if LWPKT_CFG_USE_ADDR is not enabled"
+#endif
+#if LWPKT_CFG_CMD_EXTENDED && !LWPKT_CFG_USE_CMD
+#error "LWPKT_CFG_CMD_EXTENDED must be disabled if LWPKT_CFG_USE_CMD is not enabled"
+#endif
+#if LWPKT_CFG_CRC32 && !LWPKT_CFG_USE_CRC
+#error "LWPKT_CFG_CRC32 must be disabled if LWPKT_CFG_USE_CRC is not enabled"
+#endif
+
+#define LWPKT_IS_VALID(pkt)  ((pkt) != NULL)
 
 /* Start and STOP bytes definition */
-#define LWPKT_START_BYTE 0xAA
-#define LWPKT_STOP_BYTE  0x55
+#define LWPKT_START_BYTE     0xAAU
+#define LWPKT_STOP_BYTE      0x55U
+#define LWPKT_MSB_BIT        0x80U
+#define LWPKT_7LSB_BITS_MASK 0x7FU
+
+/* Polynomial */
+#define CRC_POLY_32          0xEDB88320UL /* Reversed 0x04C11DB7 */
+#define CRC_POLY_8           0x8CUL
 
 #if LWPKT_CFG_USE_CRC
-#define WRITE_WITH_CRC(pkt, crc, tx_rb, b, len)                                                                        \
+#define INIT_CRC(pkt, crc) prv_crc_init((pkt), (crc))
+#define WRITE_AND_ADD_IN_TO_CRC(pkt, crc, data, len)                                                                   \
     do {                                                                                                               \
-        lwrb_write((tx_rb), (b), (len));                                                                               \
+        lwrb_write((pkt)->tx_rb, (data), (len));                                                                       \
         if (CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_USE_CRC, LWPKT_FLAG_USE_CRC)) {                           \
-            prv_crc_in((crc), (b), (len));                                                                             \
+            prv_crc_in((pkt), (crc), (data), (len));                                                                   \
         }                                                                                                              \
     } while (0)
 #define ADD_IN_TO_CRC(pkt, crc, val, len)                                                                              \
     do {                                                                                                               \
         if (CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_USE_CRC, LWPKT_FLAG_USE_CRC)) {                           \
-            prv_crc_in((crc), (val), (len));                                                                           \
+            prv_crc_in((pkt), (crc), (val), (len));                                                                    \
         }                                                                                                              \
     } while (0)
-#define INIT_CRC(pkt, crc) prv_crc_init((crc))
+#define CRC_DATA_LEN(pkt)                              (CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_CRC32, LWPKT_FLAG_CRC32) ? 4 : 1)
+#define WRITE_BYTES_VAR_ENCODED(pkt, var_num, crc_obj) prv_write_bytes_var_encoded((pkt), (var_num), (crc_obj))
 #else /* LWPKT_CFG_USE_CRC */
-#define WRITE_WITH_CRC(pkt, crc, tx_rb, b, len)                                                                        \
+#define INIT_CRC(pkt, crc)
+#define WRITE_AND_ADD_IN_TO_CRC(pkt, crc, data, len)                                                                   \
     do {                                                                                                               \
-        lwrb_write((tx_rb), (b), (len));                                                                               \
+        lwrb_write((pkt)->tx_rb, (data), (len));                                                                       \
     } while (0)
 #define ADD_IN_TO_CRC(pkt, crc, val, len)
-#define INIT_CRC(pkt, crc)
+#define WRITE_BYTES_VAR_ENCODED(pkt, var_num, crc_obj) prv_write_bytes_var_encoded((pkt), (var_num))
 #endif /* !LWPKT_CFG_USE_CRC */
 
 #if LWPKT_CFG_USE_EVT
-#define SEND_EVT(p, t)                                                                                                 \
-    if ((p)->evt_fn != NULL) {                                                                                         \
-        (p)->evt_fn((p), (t));                                                                                         \
-    }
-#else /* LWPKT_CFG_USE_EVT */
-#define SEND_EVT(p, t)                                                                                                 \
+#define SEND_EVT(pkt, event)                                                                                           \
     do {                                                                                                               \
-        (void)(p);                                                                                                     \
-        (void)(t);                                                                                                     \
+        if ((pkt)->evt_fn != NULL) {                                                                                   \
+            (pkt)->evt_fn((pkt), (event));                                                                             \
+        }                                                                                                              \
     } while (0)
+#else /* LWPKT_CFG_USE_EVT */
+#define SEND_EVT(pkt, event)
 #endif /* !LWPKT_CFG_USE_EVT */
 
 /* Flags for dynamically settable features in the library */
 #define LWPKT_FLAG_USE_CRC       ((uint8_t)0x01)
-#define LWPKT_FLAG_USE_ADDR      ((uint8_t)0x02)
-#define LWPKT_FLAG_USE_CMD       ((uint8_t)0x04)
+#define LWPKT_FLAG_CRC32         ((uint8_t)0x02)
+#define LWPKT_FLAG_USE_ADDR      ((uint8_t)0x04)
 #define LWPKT_FLAG_ADDR_EXTENDED ((uint8_t)0x08)
-#define LWPKT_FLAG_USE_FLAGS     ((uint8_t)0x10)
+#define LWPKT_FLAG_USE_CMD       ((uint8_t)0x10)
+#define LWPKT_FLAG_CMD_EXTENDED  ((uint8_t)0x20)
+#define LWPKT_FLAG_USE_FLAGS     ((uint8_t)0x40)
 
 /* Checks if feature is enabled for specific pkt instance */
 #define CHECK_FEATURE_CONFIG_MODE_ENABLED(_pkt_, _feature_, _flag_)                                                    \
-    (0                                                    /* For alignment purpose only */                             \
-     || ((_feature_) == 1)                                /* 1 == feature is globally enabled */                       \
-     || ((_feature_) == 2 && ((_pkt_)->flags & (_flag_))) /* 2 == feature is dynamically enabled */                    \
+    (0                                   /* For alignment purpose only */                                              \
+     || ((_feature_) == LWPKT_ON_STATIC) /* LWPKT_ON_STATIC == feature is globally enabled */                          \
+     || ((_feature_) == LWPKT_ON_DYNAMIC                                                                               \
+         && ((_pkt_)->flags & (_flag_))) /* LWPKT_ON_DYNAMIC == feature is dynamically enabled */                      \
     )
 
-/* Calculates number of bytes required to encode length. Result is increased for num_var (+= operand)*/
-#define CALC_BYTES_NUM_FOR_LEN(num_var, len_var)                                                                       \
-    do {                                                                                                               \
-        uint32_t len_local = (len_var);                                                                                \
-        do {                                                                                                           \
-            ++(num_var);                                                                                               \
-            len_local >>= (uint8_t)7U;                                                                                 \
-        } while (len_local > 0U);                                                                                      \
-    } while (0)
+/**
+ * \brief           Calculates the number of bytes required to encode the number
+ * \param           len_var: Length to calculate
+ * \return          Number of bytes
+ */
+static uint32_t
+prv_calc_num_bytes_for_len(uint32_t len_var) {
+    uint32_t len = 0;
+    do {
+        ++len;
+        len_var >>= (uint8_t)7U;
+    } while (len_var > 0U);
+    return len;
+}
 
-/* Writes data in variable encoded format */
-#define WRITE_BYTES_VAR_ENCODED(pkt, var_num)                                                                          \
-    do {                                                                                                               \
-        uint32_t local_var = (var_num);                                                                                \
-        do {                                                                                                           \
-            uint8_t byt = (local_var & 0x7FU) | (local_var > 0x7FU ? 0x80U : 0);                                       \
-            WRITE_WITH_CRC(pkt, &crc, (pkt)->tx_rb, &b, 1);                                                            \
-            local_var >>= (uint8_t)7U;                                                                                 \
-        } while (local_var > 0);                                                                                       \
-    } while (0)
+/**
+ * \brief           Set next state 
+ * 
+ * \param           pkt 
+ * \param           state 
+ */
+static void
+prv_pkt_set_state(lwpkt_t* pkt, lwpkt_state_t state) {
+    pkt->m.state = state;
+    pkt->m.index = 0;
+}
 
-#if LWPKT_CFG_USE_CRC || __DOXYGEN__
+/**
+ * \brief           Reset the internal structure
+ * 
+ * \param           pkt 
+ */
+static void
+prv_pkt_reset(lwpkt_t* pkt) {
+    LWPKT_MEMSET(&pkt->m, 0x00, sizeof(pkt->m));
+    pkt->m.state = LWPKT_STATE_START;
+}
+
+#if LWPKT_CFG_USE_CRC
+
+/**
+ * \brief           Calculate one bloc of data
+ * 
+ * \param           crc_curr: Latest CRC object to continue from
+ * \param           new_entry: New value to add to CRC
+ * \param           poly: Polynomial to use
+ * \return          New current crc value
+ */
+static uint32_t
+prv_crc_calc_one(uint32_t crc_curr, uint32_t new_entry, uint32_t poly) {
+    for (uint8_t j = 0; j < 8U; ++j) {
+        uint8_t mix = (uint8_t)(crc_curr ^ new_entry) & 0x01U;
+        crc_curr >>= 1U;
+        if (mix > 0) {
+            crc_curr ^= poly;
+        }
+        new_entry >>= 0x01U;
+    }
+    return crc_curr;
+}
 
 /**
  * \brief           Add new value to CRC instance
+ * \param           pkt: LwPKT object
  * \param[in]       crcobj: CRC instance
  * \param[in]       inp: Input data in byte format
  * \param[in]       len: Number of bytes to process
  * \return          Current CRC calculated value after all bytes or `0` on error input data
  */
-static uint8_t
-prv_crc_in(lwpkt_crc_t* crcobj, const void* inp, const size_t len) {
+static uint32_t
+prv_crc_in(lwpkt_t* pkt, lwpkt_crc_t* crcobj, const void* inp, const size_t len) {
     const uint8_t* p_data = inp;
 
     if (crcobj == NULL || p_data == NULL || len == 0) {
@@ -142,29 +192,73 @@ prv_crc_in(lwpkt_crc_t* crcobj, const void* inp, const size_t len) {
     }
 
     for (size_t i = 0; i < len; ++i, ++p_data) {
-        uint8_t inbyte = *p_data;
-        for (uint8_t j = 8U; j > 0; --j) {
-            uint8_t mix = (uint8_t)(crcobj->crc ^ inbyte) & 0x01U;
-            crcobj->crc >>= 1U;
-            if (mix > 0) {
-                crcobj->crc ^= 0x8CU;
-            }
-            inbyte >>= 0x01U;
-        }
+        crcobj->crc = prv_crc_calc_one(
+            crcobj->crc, *p_data,
+            CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_CRC32, LWPKT_FLAG_CRC32) ? CRC_POLY_32 : CRC_POLY_8);
+    }
+    return crcobj->crc;
+}
+
+/**
+ * \brief           Finish the CRC calculation.
+ * When configured to CRC-32 bit, inverse the output
+ * 
+ * \param           pkt: LwPKT object
+ * \param           crcobj: CRC object
+ * \return          CRC result
+ */
+static uint32_t
+prv_crc_finish(lwpkt_t* pkt, lwpkt_crc_t* crcobj) {
+    if (CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_CRC32, LWPKT_FLAG_CRC32)) {
+        crcobj->crc ^= 0xFFFFFFFFUL;
     }
     return crcobj->crc;
 }
 
 /**
  * \brief           Initialize CRC instance to default values
+ * \param           pkt: LwPKT object
  * \param[in]       crcobj: CRC instance
  */
 static void
-prv_crc_init(lwpkt_crc_t* crcobj) {
+prv_crc_init(lwpkt_t* pkt, lwpkt_crc_t* crcobj) {
+    (void)pkt;
     LWPKT_MEMSET(crcobj, 0x00, sizeof(*crcobj));
+
+    /* Set default value */
+    if (CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_CRC32, LWPKT_FLAG_CRC32)) {
+        crcobj->crc = 0xFFFFFFFFUL;
+    }
 }
 
-#endif /* LWPKT_CFG_USE_CRC || __DOXYGEN__ */
+#endif /* LWPKT_CFG_USE_CRC */
+
+/**
+ * \brief           Write data to the output stream, with variable length array
+ * 
+ *                  The parameters are different according to the CRC enabled/disabled status
+ * 
+ * \param           pkt: Packet object
+ * \param           var_num: Number to encode
+ * \param           crc: CRC object
+ * \return          Number of bytes used to encode the number
+ */
+static uint8_t
+prv_write_bytes_var_encoded(lwpkt_t* pkt, uint32_t var_num
+#if LWPKT_CFG_USE_CRC
+                            ,
+                            lwpkt_crc_t* crc
+#endif /* LWPKT_CFG_USE_CRC */
+) {
+    uint8_t cnt = 0;
+    do {
+        uint8_t byt = (var_num & LWPKT_7LSB_BITS_MASK) | (var_num > LWPKT_7LSB_BITS_MASK ? LWPKT_MSB_BIT : 0);
+        WRITE_AND_ADD_IN_TO_CRC(pkt, crc, &byt, 1);
+        var_num >>= (uint8_t)7U;
+        ++cnt;
+    } while (var_num > 0);
+    return cnt;
+}
 
 /**
  * \brief           Single function to define steps between packet states
@@ -186,7 +280,7 @@ prv_go_to_next_packet_rx_state(lwpkt_t* pkt) {
          * 
          * From start state, we can go to:
          * 
-         * 1. addressing, if addressing is enabled.
+         * 1. addressing, if addressing is enabled
          * 2. flags management
          * 2. command, if it is enabled
          * 4. Final option is to go directly to packet length check
@@ -210,6 +304,7 @@ prv_go_to_next_packet_rx_state(lwpkt_t* pkt) {
                 next_state = LWPKT_STATE_CMD;
                 break;
             }
+            /* Go to next step if command isn't enabled */
         } /* fallthrough */
         case LWPKT_STATE_CMD: {
             next_state = LWPKT_STATE_LEN;
@@ -253,7 +348,7 @@ prv_go_to_next_packet_rx_state(lwpkt_t* pkt) {
         }
     }
     if (next_state != LWPKT_STATE_END) {
-        LWPKT_SET_STATE(pkt, next_state);
+        prv_pkt_set_state(pkt, next_state);
     }
 }
 
@@ -271,11 +366,11 @@ lwpkt_init(lwpkt_t* pkt, lwrb_t* tx_rb, lwrb_t* rx_rb) {
     }
 
     LWPKT_MEMSET(pkt, 0x00, sizeof(*pkt));
-    LWPKT_RESET(pkt);
+    prv_pkt_reset(pkt);
 
     pkt->tx_rb = tx_rb;
     pkt->rx_rb = rx_rb;
-    pkt->flags |= 0xFFU;
+    pkt->flags |= 0xFFU; /* By default enable all dynamically enabled features */
 
     return lwpktOK;
 }
@@ -303,6 +398,12 @@ lwpkt_set_addr(lwpkt_t* pkt, lwpkt_addr_t addr) {
 /**
  * \brief           Read raw data from RX ring buffer, parse the characters
  *                  and try to construct the receive packet
+ * 
+ * \note            This is the raw implementation, and does not take into account potential
+ *                  data desynchronization or data loss at the transmission layer.
+ * 
+ *                  Use \ref lwpkt_process function instead
+ * 
  * \param[in]       pkt: Packet instance
  * \return          \ref lwpktVALID when packet valid, member of \ref lwpktr_t otherwise
  */
@@ -324,7 +425,7 @@ lwpkt_read(lwpkt_t* pkt) {
         switch (pkt->m.state) {
             case LWPKT_STATE_START: {
                 if (b == LWPKT_START_BYTE) {
-                    LWPKT_RESET(pkt); /* Reset instance and make it ready for receiving */
+                    prv_pkt_reset(pkt); /* Reset instance and make it ready for receiving */
                     INIT_CRC(pkt, &pkt->m.crc);
                     prv_go_to_next_packet_rx_state(pkt);
                 }
@@ -335,14 +436,12 @@ lwpkt_read(lwpkt_t* pkt) {
                 ADD_IN_TO_CRC(pkt, &pkt->m.crc, &b, 1);
 
                 if (CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_ADDR_EXTENDED, LWPKT_FLAG_ADDR_EXTENDED)) {
-                    pkt->m.from |= (uint8_t)(b & 0x7FU) << ((size_t)7U * (size_t)pkt->m.index++);
+                    pkt->m.from |= (uint8_t)(b & LWPKT_7LSB_BITS_MASK) << ((size_t)7U * (size_t)pkt->m.index++);
                 } else {
                     pkt->m.from = b;
                 }
-
-                /* Check if ready to move forward */
-                if (!LWPKT_CFG_ADDR_EXTENDED /* Default mode goes straight with single byte */
-                    || (LWPKT_CFG_ADDR_EXTENDED && (b & 0x80U) == 0x00)) { /* Extended mode must have MSB set to 0 */
+                if (!CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_ADDR_EXTENDED, LWPKT_FLAG_ADDR_EXTENDED)
+                    || (b & LWPKT_MSB_BIT) == 0x00) {
                     prv_go_to_next_packet_rx_state(pkt);
                 }
                 break;
@@ -351,14 +450,12 @@ lwpkt_read(lwpkt_t* pkt) {
                 ADD_IN_TO_CRC(pkt, &pkt->m.crc, &b, 1);
 
                 if (CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_ADDR_EXTENDED, LWPKT_FLAG_ADDR_EXTENDED)) {
-                    pkt->m.to |= (uint8_t)(b & 0x7FU) << ((size_t)7U * (size_t)pkt->m.index++);
+                    pkt->m.to |= (uint8_t)(b & LWPKT_7LSB_BITS_MASK) << ((size_t)7U * (size_t)pkt->m.index++);
                 } else {
                     pkt->m.to = b;
                 }
-
-                /* Check if ready to move forward */
                 if (!CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_ADDR_EXTENDED, LWPKT_FLAG_ADDR_EXTENDED)
-                    || (b & 0x80U) == 0x00) { /* Extended mode must have MSB set to 0 */
+                    || (b & LWPKT_MSB_BIT) == 0x00) {
                     prv_go_to_next_packet_rx_state(pkt);
                 }
                 break;
@@ -366,9 +463,10 @@ lwpkt_read(lwpkt_t* pkt) {
 #endif /* LWPKT_CFG_USE_ADDR */
 #if LWPKT_CFG_USE_FLAGS
             case LWPKT_STATE_FLAGS: {
-                pkt->m.flags |= (b & 0x7FU) << ((size_t)7U * (size_t)pkt->m.index++);
                 ADD_IN_TO_CRC(pkt, &pkt->m.crc, &b, 1U);
-                if ((b & 0x80U) == 0) {
+
+                pkt->m.flags |= (b & LWPKT_7LSB_BITS_MASK) << ((size_t)7U * (size_t)pkt->m.index++);
+                if ((b & LWPKT_MSB_BIT) == 0) {
                     prv_go_to_next_packet_rx_state(pkt);
                 }
                 break;
@@ -376,18 +474,25 @@ lwpkt_read(lwpkt_t* pkt) {
 #endif /* LWPKT_CFG_USE_FLAGS */
 #if LWPKT_CFG_USE_CMD
             case LWPKT_STATE_CMD: {
-                pkt->m.cmd = b;
                 ADD_IN_TO_CRC(pkt, &pkt->m.crc, &b, 1);
-                prv_go_to_next_packet_rx_state(pkt);
+
+                if (CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_CMD_EXTENDED, LWPKT_FLAG_CMD_EXTENDED)) {
+                    pkt->m.cmd |= (uint8_t)(b & LWPKT_7LSB_BITS_MASK) << ((size_t)7U * (size_t)pkt->m.index++);
+                } else {
+                    pkt->m.cmd = b;
+                }
+                if (!CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_CMD_EXTENDED, LWPKT_FLAG_CMD_EXTENDED)
+                    || (b & LWPKT_MSB_BIT) == 0x00) {
+                    prv_go_to_next_packet_rx_state(pkt);
+                }
                 break;
             }
 #endif /* LWPKT_CFG_USE_CMD */
             case LWPKT_STATE_LEN: {
-                pkt->m.len |= (b & 0x7FU) << ((size_t)7U * (size_t)pkt->m.index++);
                 ADD_IN_TO_CRC(pkt, &pkt->m.crc, &b, 1U);
 
-                /* Last length bytes has MSB bit set to 0 */
-                if ((b & 0x80U) == 0) {
+                pkt->m.len |= (b & LWPKT_7LSB_BITS_MASK) << ((size_t)7U * (size_t)pkt->m.index++);
+                if ((b & LWPKT_MSB_BIT) == 0) {
                     prv_go_to_next_packet_rx_state(pkt);
                 }
                 break;
@@ -400,7 +505,7 @@ lwpkt_read(lwpkt_t* pkt) {
                         prv_go_to_next_packet_rx_state(pkt);
                     }
                 } else {
-                    LWPKT_RESET(pkt);
+                    prv_pkt_reset(pkt);
                     res = lwpktERRMEM;
                     goto retpre;
                 }
@@ -408,13 +513,23 @@ lwpkt_read(lwpkt_t* pkt) {
             }
 #if LWPKT_CFG_USE_CRC
             case LWPKT_STATE_CRC: {
-                ADD_IN_TO_CRC(pkt, &pkt->m.crc, &b, 1U);
-                if (pkt->m.crc.crc == 0) {
-                    LWPKT_SET_STATE(pkt, LWPKT_STATE_STOP);
-                } else {
-                    LWPKT_RESET(pkt);
-                    res = lwpktERRCRC;
-                    goto retpre;
+                if (pkt->m.index < CRC_DATA_LEN(pkt)) {
+                    pkt->m.crc_data |= b << (8 * pkt->m.index);
+                    ++pkt->m.index;
+                }
+
+                /* Check if we received all CRC bytes */
+                if (pkt->m.index == CRC_DATA_LEN(pkt)) {
+                    uint32_t crc = prv_crc_finish(pkt, &pkt->m.crc);
+
+                    /* Check if calculated CRC matches the received data */
+                    if (crc == pkt->m.crc_data) {
+                        prv_pkt_set_state(pkt, LWPKT_STATE_STOP);
+                    } else {
+                        prv_pkt_reset(pkt);
+                        res = lwpktERRCRC;
+                        goto retpre;
+                    }
                 }
                 break;
             }
@@ -430,7 +545,7 @@ lwpkt_read(lwpkt_t* pkt) {
                 }
             }
             default: {
-                LWPKT_RESET(pkt);
+                prv_pkt_reset(pkt);
                 res = lwpktERR; /* Hard error */
                 goto retpre;
             }
@@ -446,7 +561,13 @@ retpre:
 }
 
 /**
- * \brief           Process packet instance and read new data
+ * \brief           Process packet RX data and check for timeouts,
+ *                  which may occur of there is no receive data for up to maximum time.
+ * 
+ * \note            This function shall be called periodically,
+ *                  at least once per every \ref LWPKT_CFG_PROCESS_INPROG_TIMEOUT milliseconds,
+ *                  to properly handle delays and timeouts in the application
+ * 
  * \param[in]       pkt: Packet instance
  * \param[in]       time: Current time in units of milliseconds
  * \return          \ref lwpktOK if processing OK, member of \ref lwpktr_t otherwise
@@ -494,16 +615,13 @@ lwpkt_write(lwpkt_t* pkt,
             uint32_t flags,
 #endif /* LWPKT_CFG_USE_FLAGS || __DOXYGEN__ */
 #if LWPKT_CFG_USE_CMD || __DOXYGEN__
-            uint8_t cmd,
+            uint32_t cmd,
 #endif /* LWPKT_CFG_USE_CMD || __DOXYGEN__ */
             const void* data, size_t len) {
     lwpktr_t res = lwpktOK;
 #if LWPKT_CFG_USE_CRC
     lwpkt_crc_t crc;
 #endif /* LWPKT_CFG_USE_CRC */
-#if LWPKT_CFG_ADDR_EXTENDED
-    lwpkt_addr_t addr;
-#endif /* LWPKT_CFG_ADDR_EXTENDED */
     size_t org_len = len;
     uint8_t b;
 
@@ -516,12 +634,12 @@ lwpkt_write(lwpkt_t* pkt,
         /* Check for required memory for packet */
         size_t min_mem = 2U;
 
-        /* Addresses */
 #if LWPKT_CFG_USE_ADDR
+        /* Addresses */
         if (CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_USE_ADDR, LWPKT_FLAG_USE_ADDR)) {
             if (CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_ADDR_EXTENDED, LWPKT_FLAG_ADDR_EXTENDED)) {
-                CALC_BYTES_NUM_FOR_LEN(min_mem, pkt->addr);
-                CALC_BYTES_NUM_FOR_LEN(min_mem, to);
+                min_mem += prv_calc_num_bytes_for_len(pkt->addr);
+                min_mem += prv_calc_num_bytes_for_len(to);
             } else {
                 min_mem += 2U; /* Static configuration */
             }
@@ -529,23 +647,32 @@ lwpkt_write(lwpkt_t* pkt,
 #endif /* LWPKT_CFG_USE_ADDR */
 
 #if LWPKT_CFG_USE_FLAGS
+        /* Flags */
         if (CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_USE_FLAGS, LWPKT_FLAG_USE_FLAGS)) {
-            CALC_BYTES_NUM_FOR_LEN(min_mem, flags);
+            min_mem += prv_calc_num_bytes_for_len(flags);
         }
 #endif /* LWPKT_CFG_USE_FLAGS */
 
+#if LWPKT_CFG_USE_CMD
         if (CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_USE_CMD, LWPKT_FLAG_USE_CMD)) {
-            ++min_mem; /* CMD part */
+            if (CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_CMD_EXTENDED, LWPKT_FLAG_CMD_EXTENDED)) {
+                min_mem += prv_calc_num_bytes_for_len(cmd);
+            } else {
+                ++min_mem; /* Static configuration */
+            }
         }
+#endif /* LWPKT_CFG_USE_FLAGS */
 
         /* Encode data length number + add actual data space requirement */
-        CALC_BYTES_NUM_FOR_LEN(min_mem, len);
+        min_mem += prv_calc_num_bytes_for_len(len);
         min_mem += len; /* Data length */
 
+#if LWPKT_CFG_USE_CRC
         /* CRC part */
         if (CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_USE_CRC, LWPKT_FLAG_USE_CRC)) {
-            ++min_mem;
+            min_mem += CRC_DATA_LEN(pkt);
         }
+#endif /* LWPKT_CFG_USE_CRC */
 
         /* Verify enough memory */
         if (lwrb_get_free(pkt->tx_rb) < min_mem) {
@@ -556,7 +683,7 @@ lwpkt_write(lwpkt_t* pkt,
 
 #if LWPKT_CFG_USE_CRC
     if (CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_USE_CRC, LWPKT_FLAG_USE_CRC)) {
-        prv_crc_init(&crc);
+        prv_crc_init(pkt, &crc);
     }
 #endif /* LWPKT_CFG_USE_CRC */
 
@@ -570,31 +697,12 @@ lwpkt_write(lwpkt_t* pkt,
         if (0) {
 #if LWPKT_CFG_ADDR_EXTENDED
         } else if (CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_ADDR_EXTENDED, LWPKT_FLAG_ADDR_EXTENDED)) {
-#if 0
-            /* FROM address */
-            WRITE_BYTES_VAR_ENCODED(pkt, pkt->addr);
-            /* FROM address */
-            WRITE_BYTES_VAR_ENCODED(pkt, to);
-#else
-            addr = pkt->addr;
-            do {
-                b = (addr & 0x7FU) | (addr > 0x7FU ? 0x80U : 0);
-                WRITE_WITH_CRC(pkt, &crc, pkt->tx_rb, &b, 1);
-                addr >>= (uint8_t)7U;
-            } while (addr > 0);
-
-            /* TO address */
-            addr = to;
-            do {
-                b = (addr & 0x7FU) | (addr > 0x7FU ? 0x80U : 0);
-                WRITE_WITH_CRC(pkt, &crc, pkt->tx_rb, &b, 1);
-                addr >>= (uint8_t)7U;
-            } while (addr > 0);
-#endif
-        } else {
+            WRITE_BYTES_VAR_ENCODED(pkt, pkt->addr, &crc);
+            WRITE_BYTES_VAR_ENCODED(pkt, to, &crc);
 #endif /* !LWPKT_CFG_ADDR_EXTENDED */
-            WRITE_WITH_CRC(pkt, &crc, pkt->tx_rb, &pkt->addr, 1);
-            WRITE_WITH_CRC(pkt, &crc, pkt->tx_rb, &to, 1);
+        } else {
+            WRITE_AND_ADD_IN_TO_CRC(pkt, &crc, &pkt->addr, 1);
+            WRITE_AND_ADD_IN_TO_CRC(pkt, &crc, &to, 1);
         }
     }
 #endif /* LWPKT_CFG_USE_ADDR */
@@ -602,37 +710,37 @@ lwpkt_write(lwpkt_t* pkt,
 #if LWPKT_CFG_USE_FLAGS
     /* Flags part */
     if (CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_USE_FLAGS, LWPKT_FLAG_USE_FLAGS)) {
-        do {
-            b = (flags & 0x7FU) | (flags > 0x7FU ? 0x80U : 0);
-            WRITE_WITH_CRC(pkt, &crc, pkt->tx_rb, &b, 1);
-            flags >>= (uint8_t)7U;
-        } while (flags > 0);
+        WRITE_BYTES_VAR_ENCODED(pkt, flags, &crc);
     }
 #endif
 
 #if LWPKT_CFG_USE_CMD
     /* CMD byte */
     if (CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_USE_CMD, LWPKT_FLAG_USE_CMD)) {
-        WRITE_WITH_CRC(pkt, &crc, pkt->tx_rb, &cmd, 1);
+        if (CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_CMD_EXTENDED, LWPKT_FLAG_CMD_EXTENDED)) {
+            WRITE_BYTES_VAR_ENCODED(pkt, cmd, &crc);
+        } else {
+            WRITE_AND_ADD_IN_TO_CRC(pkt, &crc, &cmd, 1);
+        }
     }
 #endif /* LWPKT_CFG_USE_CMD */
 
     /* Length bytes */
-    do {
-        b = (len & 0x7FU) | (len > 0x7FU ? 0x80U : 0);
-        WRITE_WITH_CRC(pkt, &crc, pkt->tx_rb, &b, 1);
-        len >>= 7U;
-    } while (len > 0);
+    WRITE_BYTES_VAR_ENCODED(pkt, len, &crc);
 
     /* Data bytes, but only if length more than 0 */
     if (org_len > 0) {
-        WRITE_WITH_CRC(pkt, &crc, pkt->tx_rb, data, org_len);
+        WRITE_AND_ADD_IN_TO_CRC(pkt, &crc, data, org_len);
     }
 
 #if LWPKT_CFG_USE_CRC
     /* CRC byte */
     if (CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_USE_CRC, LWPKT_FLAG_USE_CRC)) {
-        lwrb_write(pkt->tx_rb, &crc.crc, 1);
+        uint32_t crc_data = prv_crc_finish(pkt, &crc);
+        for (size_t i = 0; i < CRC_DATA_LEN(pkt); ++i, crc_data >>= 8UL) {
+            uint8_t byt = crc_data & 0xFFUL;
+            lwrb_write(pkt->tx_rb, &byt, 1);
+        }
     }
 #endif /* LWPKT_CFG_USE_CRC */
 
@@ -659,7 +767,7 @@ lwpkt_reset(lwpkt_t* pkt) {
     if (!LWPKT_IS_VALID(pkt)) {
         return lwpktERR;
     }
-    LWPKT_RESET(pkt);
+    prv_pkt_reset(pkt);
     return lwpktOK;
 }
 
@@ -680,7 +788,7 @@ lwpkt_set_evt_fn(lwpkt_t* pkt, lwpkt_evt_fn evt_fn) {
 
 #endif /* LWPKT_CFG_USE_EVT || __DOXYGEN__ */
 
-#if LWPKT_CFG_USE_CRC == 2 || __DOXYGEN__
+#if LWPKT_CFG_USE_CRC == LWPKT_ON_DYNAMIC || __DOXYGEN__
 
 /**
  * \brief           Set CRC mode enabled.
@@ -698,9 +806,29 @@ lwpkt_set_crc_enabled(lwpkt_t* pkt, uint8_t enable) {
     }
 }
 
-#endif /* LWPKT_CFG_USE_CRC == 2 || __DOXYGEN__ */
+#endif /* LWPKT_CFG_USE_CRC == LWPKT_ON_DYNAMIC || __DOXYGEN__ */
 
-#if LWPKT_CFG_USE_ADDR == 2 || __DOXYGEN__
+#if LWPKT_CFG_CRC32 == LWPKT_ON_DYNAMIC || __DOXYGEN__
+
+/**
+ * \brief           Enable extended addressing in the packet
+ * 
+ * \note            This function is only available, if \ref LWPKT_CFG_CRC32 is `2`
+ * \param           pkt: LwPKT instance
+ * \param           enable: `1` to enable, `0` otherwise
+ */
+void
+lwpkt_set_crc32_enabled(lwpkt_t* pkt, uint8_t enable) {
+    if (enable) {
+        pkt->flags |= LWPKT_FLAG_CRC32;
+    } else {
+        pkt->flags &= ~LWPKT_FLAG_CRC32;
+    }
+}
+
+#endif /* LWPKT_CFG_CRC32 == LWPKT_ON_DYNAMIC || __DOXYGEN__ */
+
+#if LWPKT_CFG_USE_ADDR == LWPKT_ON_DYNAMIC || __DOXYGEN__
 
 /**
  * \brief           Enable addressing in the packet
@@ -718,9 +846,9 @@ lwpkt_set_addr_enabled(lwpkt_t* pkt, uint8_t enable) {
     }
 }
 
-#endif /* LWPKT_CFG_USE_ADDR == 2 || __DOXYGEN__ */
+#endif /* LWPKT_CFG_USE_ADDR == LWPKT_ON_DYNAMIC || __DOXYGEN__ */
 
-#if LWPKT_CFG_ADDR_EXTENDED == 2 || __DOXYGEN__
+#if LWPKT_CFG_ADDR_EXTENDED == LWPKT_ON_DYNAMIC || __DOXYGEN__
 
 /**
  * \brief           Enable extended addressing in the packet
@@ -738,9 +866,9 @@ lwpkt_set_addr_extended_enabled(lwpkt_t* pkt, uint8_t enable) {
     }
 }
 
-#endif /* LWPKT_CFG_ADDR_EXTENDED == 2 || __DOXYGEN__ */
+#endif /* LWPKT_CFG_ADDR_EXTENDED == LWPKT_ON_DYNAMIC || __DOXYGEN__ */
 
-#if LWPKT_CFG_USE_CMD == 2 || __DOXYGEN__
+#if LWPKT_CFG_USE_CMD == LWPKT_ON_DYNAMIC || __DOXYGEN__
 
 /**
  * \brief           Enable CMD mode in the packet
@@ -758,9 +886,29 @@ lwpkt_set_cmd_enabled(lwpkt_t* pkt, uint8_t enable) {
     }
 }
 
-#endif /* LWPKT_CFG_USE_CMD == 2 || __DOXYGEN__ */
+#endif /* LWPKT_CFG_USE_CMD == LWPKT_ON_DYNAMIC || __DOXYGEN__ */
 
-#if LWPKT_CFG_USE_FLAGS == 2 || __DOXYGEN__
+#if LWPKT_CFG_CMD_EXTENDED == LWPKT_ON_DYNAMIC || __DOXYGEN__
+
+/**
+ * \brief           Enable extended addressing in the packet
+ * 
+ * \note            This function is only available, if \ref LWPKT_CFG_CMD_EXTENDED is `2`
+ * \param           pkt: LwPKT instance
+ * \param           enable: `1` to enable, `0` otherwise
+ */
+void
+lwpkt_set_cmd_extended_enabled(lwpkt_t* pkt, uint8_t enable) {
+    if (enable) {
+        pkt->flags |= LWPKT_FLAG_CMD_EXTENDED;
+    } else {
+        pkt->flags &= ~LWPKT_FLAG_CMD_EXTENDED;
+    }
+}
+
+#endif /* LWPKT_CFG_CMD_EXTENDED == LWPKT_ON_DYNAMIC || __DOXYGEN__ */
+
+#if LWPKT_CFG_USE_FLAGS == LWPKT_ON_DYNAMIC || __DOXYGEN__
 
 /**
  * \brief           Enable FLAGS mode in the packet
@@ -778,4 +926,4 @@ lwpkt_set_flags_enabled(lwpkt_t* pkt, uint8_t enable) {
     }
 }
 
-#endif /* LWPKT_CFG_USE_FLAGS == 2 || __DOXYGEN__ */
+#endif /* LWPKT_CFG_USE_FLAGS == LWPKT_ON_DYNAMIC || __DOXYGEN__ */

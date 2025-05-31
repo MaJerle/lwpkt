@@ -47,7 +47,7 @@ my_lwpkt_evt_fn(lwpkt_t* pkt, lwpkt_evt_type_t type) {
 /**
  * \brief           LwPKT example code with event feature
  */
-void
+int
 example_lwpkt_evt(void) {
     lwpktr_t res;
     uint32_t time;
@@ -113,4 +113,5 @@ example_lwpkt_evt(void) {
     lwpkt_process(&pkt, time);
 
     (void)res;
+    return 0;
 }

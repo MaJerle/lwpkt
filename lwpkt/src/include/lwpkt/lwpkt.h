@@ -29,7 +29,7 @@
  * This file is part of LwPKT - Lightweight packet protocol library.
  *
  * Author:          Tilen MAJERLE <tilen@majerle.eu>
- * Version:         v1.3.0
+ * Version:         v1.4.0
  */
 #ifndef LWPKT_HDR_H
 #define LWPKT_HDR_H
@@ -83,7 +83,7 @@ typedef enum {
  * \brief           CRC structure for packet
  */
 typedef struct {
-    uint8_t crc; /*!< Current CRC value */
+    uint32_t crc; /*!< Current CRC value */
 } lwpkt_crc_t;
 
 /* Forward declaration */
@@ -96,9 +96,9 @@ typedef enum {
     LWPKT_EVT_PKT,        /*!< Valid packet ready to read */
     LWPKT_EVT_TIMEOUT,    /*!< Timeout on packat, reset event */
     LWPKT_EVT_READ,       /*!< Packet read operation.
-                            Called when read operation happens from RX buffer */
+                                Called when read operation happens from RX buffer */
     LWPKT_EVT_WRITE,      /*!< Packet write operation.
-                            Called when write operation happens to TX buffer  */
+                                Called when write operation happens to TX buffer  */
     LWPKT_EVT_PRE_WRITE,  /*!< Packet pre-write operation.
                                 Called before write operation could even start.
                                 It can be used to get exclusive mutex access to the resource */
@@ -148,8 +148,9 @@ typedef struct lwpkt {
     struct {
         lwpkt_state_t state; /*!< Actual packet state machine */
 #if LWPKT_CFG_USE_CRC || __DOXYGEN__
-        lwpkt_crc_t crc; /*!< Packet CRC byte */
-#endif                   /* LWPKT_CFG_USE_CRC || __DOXYGEN__ */
+        lwpkt_crc_t crc;   /*!< Packet CRC object */
+        uint32_t crc_data; /*!< CRC data received from the other side */
+#endif                     /* LWPKT_CFG_USE_CRC || __DOXYGEN__ */
 #if LWPKT_CFG_USE_ADDR || __DOXYGEN__
         lwpkt_addr_t from; /*!< Device address packet is coming from */
         lwpkt_addr_t to;   /*!< Device address packet is intended for */
@@ -158,7 +159,7 @@ typedef struct lwpkt {
         uint32_t flags; /*!< Custom flags */
 #endif                  /* LWPKT_CFG_USE_FLAGS || __DOXYGEN__ */
 #if LWPKT_CFG_USE_CMD || __DOXYGEN__
-        uint8_t cmd;  /*!< Command packet */
+        uint32_t cmd; /*!< Command packet */
 #endif                /* LWPKT_CFG_USE_CMD || __DOXYGEN__ */
         size_t len;   /*!< Number of bytes to receive */
         size_t index; /*!< General index variable for multi-byte parts of packet */
@@ -176,7 +177,7 @@ lwpktr_t lwpkt_write(lwpkt_t* pkt,
                      uint32_t flags,
 #endif /* LWPKT_CFG_USE_FLAGS || __DOXYGEN__ */
 #if LWPKT_CFG_USE_CMD || __DOXYGEN__
-                     uint8_t cmd,
+                     uint32_t cmd,
 #endif /* LWPKT_CFG_USE_CMD || __DOXYGEN__ */
                      const void* data, size_t len);
 lwpktr_t lwpkt_reset(lwpkt_t* pkt);
@@ -184,11 +185,13 @@ lwpktr_t lwpkt_process(lwpkt_t* pkt, uint32_t time);
 lwpktr_t lwpkt_set_evt_fn(lwpkt_t* pkt, lwpkt_evt_fn evt_fn);
 
 /* Functions available as conditional build */
-void lwpkt_set_crc_enabled(lwpkt_t* pkt, uint8_t enable);
 void lwpkt_set_addr_enabled(lwpkt_t* pkt, uint8_t enable);
 void lwpkt_set_addr_extended_enabled(lwpkt_t* pkt, uint8_t enable);
-void lwpkt_set_cmd_enabled(lwpkt_t* pkt, uint8_t enable);
 void lwpkt_set_flags_enabled(lwpkt_t* pkt, uint8_t enable);
+void lwpkt_set_cmd_enabled(lwpkt_t* pkt, uint8_t enable);
+void lwpkt_set_cmd_extended_enabled(lwpkt_t* pkt, uint8_t enable);
+void lwpkt_set_crc_enabled(lwpkt_t* pkt, uint8_t enable);
+void lwpkt_set_crc32_enabled(lwpkt_t* pkt, uint8_t enable);
 
 /**
  * \brief           Get address from where packet was sent
@@ -223,7 +226,7 @@ void lwpkt_set_flags_enabled(lwpkt_t* pkt, uint8_t enable);
  * \param[in]       pkt: LwPKT instance
  * \return          Command data field
  */
-#define lwpkt_get_cmd(pkt)       (uint8_t)(((pkt) != NULL) ? ((pkt)->m.cmd) : 0)
+#define lwpkt_get_cmd(pkt)       (uint32_t)(((pkt) != NULL) ? ((pkt)->m.cmd) : 0)
 
 /**
  * \brief           Get packet flags

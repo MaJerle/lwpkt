@@ -57,22 +57,22 @@ Update cloned to latest version
 Add library to project
 ^^^^^^^^^^^^^^^^^^^^^^
 
-At this point it is assumed that you have successfully download library, either cloned it or from releases page.
+At this point it is assumed that you have successfully download library, either with ``git clone`` command or with manual download from the library releases page.
 Next step is to add the library to the project, by means of source files to compiler inputs and header files in search path.
 
 *CMake* is the main supported build system. Package comes with the ``CMakeLists.txt`` and ``library.cmake`` files, both located in the ``lwpkt`` directory:
 
-* ``CMakeLists.txt``: Is a wrapper and only includes ``library.cmake`` file. It is used if target application uses ``add_subdirectory`` and then uses ``target_link_libraries`` to include the library in the project
-* ``library.cmake``: It is a fully configured set of variables. User must use ``include(path/to/library.cmake)`` to include the library and must manually add files/includes to the final target
+* ``library.cmake``: It is a fully configured set of variables and with library definition. User can include this file to the project file with ``include(path/to/library.cmake)`` and then manually use the variables provided by the file, such as list of source files, include paths or necessary compiler definitions. It is up to the user to properly use the this file on its own.
+* ``CMakeLists.txt``: It is a wrapper-only file and includes ``library.cmake`` file. It is used for when user wants to include the library to the main project by simply calling *CMake* ``add_subdirectory`` command, followed by ``target_link_libraries`` to link external library to the final project.
 
 .. tip::
-    Open ``library.cmake`` file and manually analyze all the possible variables you can set for full functionality.
+    Open ``library.cmake`` and analyze the provided information. Among variables, you can also find list of all possible exposed libraries for the user.
 
 If you do not use the *CMake*, you can do the following:
 
 * Copy ``lwpkt`` folder to your project, it contains library files
 * Add ``lwpkt/src/include`` folder to `include path` of your toolchain. This is where `C/C++` compiler can find the files during compilation process. Usually using ``-I`` flag
-* Add source files from ``lwpkt/src/`` folder to toolchain build. These files are built by `C/C++` compiler. CMake configuration comes with the library, allows users to include library in the project as **subdirectory** and **library**.
+* Add source files from ``lwpkt/src/`` folder to toolchain build. These files are built by `C/C++` compiler
 * Copy ``lwpkt/src/include/lwpkt/lwpkt_opts_template.h`` to project folder and rename it to ``lwpkt_opts.h``
 * Build the project
 
@@ -89,8 +89,8 @@ and it should be copied (or simply renamed in-place) and named ``lwpkt_opts.h``
     include paths have access to it by using ``#include "lwpkt_opts.h"``.
 
 .. tip::
-    If you are using *CMake* build system, define the variable ``LWPKT_OPTS_DIR`` before adding library's directory to the *CMake* project.
-    Variable must set the output directory path. CMake will copy the template file there, and name it as required.
+    If you are using *CMake* build system, define the variable ``LWPKT_OPTS_FILE`` before adding library's directory to the *CMake* project.
+    Variable must contain the path to the user options file. If not provided and to avoid build error, one will be generated in the build directory.
 
 Configuration options list is available available in the :ref:`api_lwpkt_opt` section.
 If any option is about to be modified, it should be done in configuration file
