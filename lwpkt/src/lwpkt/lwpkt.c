@@ -29,7 +29,7 @@
  * This file is part of LwPKT - Lightweight packet protocol library.
  *
  * Author:          Tilen MAJERLE <tilen@majerle.eu>
- * Version:         v1.4.0
+ * Version:         v1.4.1
  */
 #include <stdint.h>
 #include <string.h>
@@ -627,7 +627,7 @@ lwpkt_write(lwpkt_t* pkt,
 
     SEND_EVT(pkt, LWPKT_EVT_PRE_WRITE);
 
-    if (!LWPKT_IS_VALID(pkt)) {
+    if (!LWPKT_IS_VALID(pkt) || (data == NULL && len > 0)) {
         res = lwpktERR;
         goto fast_return;
     } else {

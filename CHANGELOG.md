@@ -2,6 +2,10 @@
 
 ## Develop
 
+## v1.4.1
+
+- Fix the parameter check for write operation
+
 ## v1.4.0
 
 - Add python file prototype.
