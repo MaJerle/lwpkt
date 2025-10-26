@@ -2,6 +2,10 @@
 
 ## Develop
 
+## v1.5.1
+
+- Fix the platformio library package description
+
 ## v1.5.0
 
 - Fix the platformio library package description
