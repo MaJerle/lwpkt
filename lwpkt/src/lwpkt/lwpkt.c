@@ -29,7 +29,7 @@
  * This file is part of LwPKT - Lightweight packet protocol library.
  *
  * Author:          Tilen MAJERLE <tilen@majerle.eu>
- * Version:         v1.4.1
+ * Version:         v1.5.0
  */
 #include <stdint.h>
 #include <string.h>
@@ -927,3 +927,25 @@ lwpkt_set_flags_enabled(lwpkt_t* pkt, uint8_t enable) {
 }
 
 #endif /* LWPKT_CFG_USE_FLAGS == LWPKT_ON_DYNAMIC || __DOXYGEN__ */
+
+/**
+ * \brief           Set custom argument, that can be retrieved in the event function
+ * \param[in]       pkt: Packet instance
+ * \param[in]       arg: Custom user argument
+ */
+void
+lwpkt_set_arg(lwpkt_t* pkt, void* arg) {
+    if (pkt != NULL) {
+        pkt->arg = arg;
+    }
+}
+
+/**
+ * \brief           Get custom argument, previously set with \ref lwpkt_set_arg
+ * \param[in]       pkt: Packet instance
+ * \return          User argument, previously set with \ref lwpkt_set_arg
+ */
+void*
+lwpkt_get_arg(lwpkt_t* pkt) {
+    return pkt != NULL ? pkt->arg : NULL;
+}

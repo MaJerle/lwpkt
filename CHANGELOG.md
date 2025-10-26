@@ -2,6 +2,11 @@
 
 ## Develop
 
+## v1.5.0
+
+- Fix the platformio library package description
+- Add the `lwpkt_set_arg` and `lwpkt_get_arg` functions for custom user arguments
+
 ## v1.4.1
 
 - Fix the parameter check for write operation

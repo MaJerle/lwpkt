@@ -31,6 +31,8 @@
         ]
     },
     "build": {
-        "includeDir": "lwpkt/src/include"
+        "includeDir": "lwpkt/src/include",
+        "srcDir": ".",
+        "srcFilter": "+<lwpkt>"
     }
 }

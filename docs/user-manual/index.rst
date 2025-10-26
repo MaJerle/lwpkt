@@ -29,12 +29,21 @@ Packet structure consists of several fields, where some are optional and some ar
     Full features structure format
 
 * ``START``: Byte with fixed value to represent start of packet
-* ``FROM``: Byte(s) from where this packet is coming from. Optional field, can be disabled with :c:macro:`LWPKT_CFG_USE_ADDR`
-* ``TO``: Byte(s) to where this packet is targeting. Optional field, can be disabled with :c:macro:`LWPKT_CFG_USE_ADDR`
+* ``FROM``: Byte(s) from where this packet is coming from. Optional field, can be disabled with :c:macro:`LWPKT_CFG_USE_ADDR`.
+
+    * When more than ``256`` devices are on the bus, field can be extended to the variable length encoding with :c:macro:`LWPKT_CFG_ADDR_EXTENDED`
+
+* ``TO``: Byte(s) to where this packet is targeting. Optional field, can be disabled with :c:macro:`LWPKT_CFG_USE_ADDR`.
+
+    * When more than ``256`` devices are on the bus, field can be extended to the variable length encoding with :c:macro:`LWPKT_CFG_ADDR_EXTENDED`
+
 * ``FLAGS``: Variable length (unsigned 32-bit max) field for optional user flags. Optional field, can be disabled with :c:macro:`LWPKT_CFG_USE_FLAGS`
-* ``CMD``: Byte with optional command field to better align with multiple packets. Optional field, can be disabled with :c:macro:`LWPKT_CFG_USE_CMD`
-* ``LEN``: Length of *data* part field. This is variable multi-byte length to support data length ``>= 256`` bytes. Always present
-* ``DATA``: Optional data field. Number of bytes is as in ``LEN`` field
+* ``CMD``: Byte with optional command field to better align with multiple packets. Optional field, can be disabled with :c:macro:`LWPKT_CFG_USE_CMD`.
+
+    * When more than ``256`` different commands are being used, field can be extended to the variable length encoding with :c:macro:`LWPKT_CFG_CMD_EXTENDED`
+
+* ``LEN``: Length of *data* part field. This is variable multi-byte length to support data length ``>= 256`` bytes. Always present, even if *data length* is set to ``0`` 
+* ``DATA``: Optional data field. Number of bytes is as in ``LEN`` field. Not part of the packet when ``LEN`` field is set to ``0``
 * ``CRC``: 8-bit CRC of all enabled fields except *START* and *STOP* bytes. Optional field, can be disabled with :c:macro:`LWPKT_CFG_USE_CRC`
 * ``STOP``: Byte with fixed value to represent stop of packet
 
@@ -58,21 +67,21 @@ Variable data length
 Some fields implement variable data length feature, to optimize data transfer length.
 Fields with variable length implementation are:
 
-* ``LEN`` field, which is always present in the packet
+* ``LEN`` field, which is always present in the packet and is always variable length encoded
 * ``FROM`` and ``TO`` fields when :c:macro:`LWPKT_CFG_ADDR_EXTENDED` feature is enabled
 * ``FLAGS`` field when :c:macro:`LWPKT_CFG_USE_FLAGS` feature is enabled
+* ``CMD`` field when :c:macro:`LWPKT_CFG_CMD_EXTENDED` feature is enabled
 
 Variable data length is a feature that uses minimum number of bytes to transfer the data.
 It uses ``7 LSB bits`` per byte for actual data, and ``MSB`` bit to indicate if there are more bytes coming after.
 
-For example, values between ``0x00 - 0x7F`` are codified within single byte, while values between ``0x80 - 0xFF`` require ``2`` bytes for transfer.
-
+For example, values between ``0x00 - 0x7F`` are encoded within single byte, while values between ``0x80 - 0xFF`` require ``2`` bytes for transfer.
 
 .. note ::
     To transfer ``32-bit`` variable, minimum ``1-byte`` and maximum ``5-bytes`` are used.
 
 .. tip ::
-    Data codification is always LSB Byte first.
+    Data encoding is always LSB Byte first.
 
 Static & dynamic feature
 ************************

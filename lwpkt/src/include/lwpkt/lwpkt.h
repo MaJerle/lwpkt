@@ -29,7 +29,7 @@
  * This file is part of LwPKT - Lightweight packet protocol library.
  *
  * Author:          Tilen MAJERLE <tilen@majerle.eu>
- * Version:         v1.4.1
+ * Version:         v1.5.0
  */
 #ifndef LWPKT_HDR_H
 #define LWPKT_HDR_H
@@ -144,6 +144,7 @@ typedef struct lwpkt {
     lwpkt_evt_fn evt_fn; /*!< Global event function for read and write operation */
 #endif                   /* LWPKT_CFG_USE_EVT || __DOXYGEN__ */
     uint8_t flags;       /*!< List of flags */
+    void* arg;           /*!< Custom user argument */
 
     struct {
         lwpkt_state_t state; /*!< Actual packet state machine */
@@ -183,6 +184,8 @@ lwpktr_t lwpkt_write(lwpkt_t* pkt,
 lwpktr_t lwpkt_reset(lwpkt_t* pkt);
 lwpktr_t lwpkt_process(lwpkt_t* pkt, uint32_t time);
 lwpktr_t lwpkt_set_evt_fn(lwpkt_t* pkt, lwpkt_evt_fn evt_fn);
+void lwpkt_set_arg(lwpkt_t* pkt, void* arg);
+void* lwpkt_get_arg(lwpkt_t* pkt);
 
 /* Functions available as conditional build */
 void lwpkt_set_addr_enabled(lwpkt_t* pkt, uint8_t enable);
