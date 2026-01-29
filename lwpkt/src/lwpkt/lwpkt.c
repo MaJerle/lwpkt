@@ -185,7 +185,7 @@ prv_crc_calc_one(uint32_t crc_curr, uint32_t new_entry, uint32_t poly) {
  */
 static uint32_t
 prv_crc_in(lwpkt_t* pkt, lwpkt_crc_t* crcobj, const void* inp, const size_t len) {
-    const uint8_t* p_data = inp;
+    const uint8_t* p_data = (uint8_t*)inp;
 
     if (crcobj == NULL || p_data == NULL || len == 0) {
         return 0;
