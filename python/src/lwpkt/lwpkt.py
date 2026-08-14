@@ -85,16 +85,16 @@ class LwPKT(object):
         self.our_addr: int = 0
         self.max_data_len: int = 0  # 0 means unlimited, or else caps the max accepted data length
 
-        # Contains raw RX bytes; each write_rx_data() call enqueues one block
+        # Contains raw RX bytes, each write_rx_data() call enqueues one block
         self.rx_data: queue.Queue = queue.Queue()
 
-        # Contains receive object; reset for each new packet
+        # Contains receive object, reset for each new packet
         self.rx: LwPKT.Packet = LwPKT.Packet()
 
         # Contains queue of valid receive packets
         self.rx_packets: queue.Queue = queue.Queue()
 
-        # Bytes left over from a block that raised mid-parse; resumed on the next rx_process() call
+        # Bytes left over from a block that raised mid-parse, resumed on the next rx_process() call
         self._pending: list[int] | None = None
 
         # RX throughput debug counters
@@ -346,7 +346,7 @@ class LwPKT(object):
 
         return ret
 
-    def rx_get_packet(self) -> 'LwPKT.Packet | bool':
+    def rx_get_packet(self) -> Packet | bool:
         """Retrieve the next fully decoded packet, if any.
 
         Returns:
