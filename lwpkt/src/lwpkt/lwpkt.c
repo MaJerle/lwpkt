@@ -59,6 +59,28 @@
 #define CRC_POLY_32          0xEDB88320UL /* Reversed 0x04C11DB7 */
 #define CRC_POLY_8           0x8CUL
 
+/**
+ * \brief           Maximum number of 7-bit encoded bytes needed to represent \c max_val,
+ *                  used to cap the number of continuation bytes any variable-length
+ *                  encoded field may consume.
+ *
+ *                  Any encoding longer than this must already describe a value bigger
+ *                  than \c max_val, so it can be rejected before the byte count could
+ *                  ever shift a value by an out-of-range amount (undefined behavior).
+ */
+#define LWPKT_VAR_LEN_MAX_ENC_BYTES(max_val)                                                                           \
+    ((uint32_t)(max_val) < (1UL << 7)    ? 1U                                                                          \
+     : (uint32_t)(max_val) < (1UL << 14) ? 2U                                                                          \
+     : (uint32_t)(max_val) < (1UL << 21) ? 3U                                                                          \
+     : (uint32_t)(max_val) < (1UL << 28) ? 4U                                                                          \
+                                         : 5U)
+
+/* Maximum number of encoding bytes for each of the field */
+#define LWPKT_LEN_MAX_ENC_BYTES   LWPKT_VAR_LEN_MAX_ENC_BYTES(LWPKT_CFG_MAX_DATA_LEN)
+#define LWPKT_ADDR_MAX_ENC_BYTES  LWPKT_VAR_LEN_MAX_ENC_BYTES(0xFFFFFFFFUL)
+#define LWPKT_CMD_MAX_ENC_BYTES   LWPKT_VAR_LEN_MAX_ENC_BYTES(0xFFFFFFFFUL)
+#define LWPKT_FLAGS_MAX_ENC_BYTES LWPKT_VAR_LEN_MAX_ENC_BYTES(0xFFFFFFFFUL)
+
 #if LWPKT_CFG_USE_CRC
 #define INIT_CRC(pkt, crc) prv_crc_init((pkt), (crc))
 #define WRITE_AND_ADD_IN_TO_CRC(pkt, crc, data, len)                                                                   \
@@ -74,7 +96,7 @@
             prv_crc_in((pkt), (crc), (val), (len));                                                                    \
         }                                                                                                              \
     } while (0)
-#define CRC_DATA_LEN(pkt)                              (CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_CRC32, LWPKT_FLAG_CRC32) ? 4 : 1)
+#define CRC_DATA_LEN(pkt) (CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_CRC32, LWPKT_FLAG_CRC32) ? 4 : 1)
 #define WRITE_BYTES_VAR_ENCODED(pkt, var_num, crc_obj) prv_write_bytes_var_encoded((pkt), (var_num), (crc_obj))
 #else /* LWPKT_CFG_USE_CRC */
 #define INIT_CRC(pkt, crc)
@@ -437,11 +459,16 @@ lwpkt_read(lwpkt_t* pkt) {
 
                 if (CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_ADDR_EXTENDED, LWPKT_FLAG_ADDR_EXTENDED)) {
                     pkt->m.from |= (uint8_t)(b & LWPKT_7LSB_BITS_MASK) << ((size_t)7U * (size_t)pkt->m.index++);
+                    if ((b & LWPKT_MSB_BIT) == 0x00) {
+                        prv_go_to_next_packet_rx_state(pkt);
+                    } else if (pkt->m.index >= LWPKT_ADDR_MAX_ENC_BYTES) {
+                        /* Too many continuation bytes */
+                        prv_pkt_reset(pkt);
+                        res = lwpktERR;
+                        goto retpre;
+                    }
                 } else {
                     pkt->m.from = b;
-                }
-                if (!CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_ADDR_EXTENDED, LWPKT_FLAG_ADDR_EXTENDED)
-                    || (b & LWPKT_MSB_BIT) == 0x00) {
                     prv_go_to_next_packet_rx_state(pkt);
                 }
                 break;
@@ -451,11 +478,16 @@ lwpkt_read(lwpkt_t* pkt) {
 
                 if (CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_ADDR_EXTENDED, LWPKT_FLAG_ADDR_EXTENDED)) {
                     pkt->m.to |= (uint8_t)(b & LWPKT_7LSB_BITS_MASK) << ((size_t)7U * (size_t)pkt->m.index++);
+                    if ((b & LWPKT_MSB_BIT) == 0x00) {
+                        prv_go_to_next_packet_rx_state(pkt);
+                    } else if (pkt->m.index >= LWPKT_ADDR_MAX_ENC_BYTES) {
+                        /* Too many continuation bytes */
+                        prv_pkt_reset(pkt);
+                        res = lwpktERR;
+                        goto retpre;
+                    }
                 } else {
                     pkt->m.to = b;
-                }
-                if (!CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_ADDR_EXTENDED, LWPKT_FLAG_ADDR_EXTENDED)
-                    || (b & LWPKT_MSB_BIT) == 0x00) {
                     prv_go_to_next_packet_rx_state(pkt);
                 }
                 break;
@@ -468,6 +500,11 @@ lwpkt_read(lwpkt_t* pkt) {
                 pkt->m.flags |= (b & LWPKT_7LSB_BITS_MASK) << ((size_t)7U * (size_t)pkt->m.index++);
                 if ((b & LWPKT_MSB_BIT) == 0) {
                     prv_go_to_next_packet_rx_state(pkt);
+                } else if (pkt->m.index >= LWPKT_FLAGS_MAX_ENC_BYTES) {
+                    /* Too many continuation bytes */
+                    prv_pkt_reset(pkt);
+                    res = lwpktERR;
+                    goto retpre;
                 }
                 break;
             }
@@ -478,11 +515,16 @@ lwpkt_read(lwpkt_t* pkt) {
 
                 if (CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_CMD_EXTENDED, LWPKT_FLAG_CMD_EXTENDED)) {
                     pkt->m.cmd |= (uint8_t)(b & LWPKT_7LSB_BITS_MASK) << ((size_t)7U * (size_t)pkt->m.index++);
+                    if ((b & LWPKT_MSB_BIT) == 0x00) {
+                        prv_go_to_next_packet_rx_state(pkt);
+                    } else if (pkt->m.index >= LWPKT_CMD_MAX_ENC_BYTES) {
+                        /* Too many continuation bytes */
+                        prv_pkt_reset(pkt);
+                        res = lwpktERR;
+                        goto retpre;
+                    }
                 } else {
                     pkt->m.cmd = b;
-                }
-                if (!CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_CMD_EXTENDED, LWPKT_FLAG_CMD_EXTENDED)
-                    || (b & LWPKT_MSB_BIT) == 0x00) {
                     prv_go_to_next_packet_rx_state(pkt);
                 }
                 break;
@@ -493,7 +535,18 @@ lwpkt_read(lwpkt_t* pkt) {
 
                 pkt->m.len |= (b & LWPKT_7LSB_BITS_MASK) << ((size_t)7U * (size_t)pkt->m.index++);
                 if ((b & LWPKT_MSB_BIT) == 0) {
+                    /* Last length byte received - final value must still fit the data buffer */
+                    if (pkt->m.len > sizeof(pkt->data)) {
+                        prv_pkt_reset(pkt);
+                        res = lwpktERRMEM;
+                        goto retpre;
+                    }
                     prv_go_to_next_packet_rx_state(pkt);
+                } else if (pkt->m.index >= LWPKT_LEN_MAX_ENC_BYTES) {
+                    /* Too many continuation bytes */
+                    prv_pkt_reset(pkt);
+                    res = lwpktERRMEM;
+                    goto retpre;
                 }
                 break;
             }
@@ -625,9 +678,13 @@ lwpkt_write(lwpkt_t* pkt,
     size_t org_len = len;
     uint8_t b;
 
+    if (!LWPKT_IS_VALID(pkt)) {
+        return lwpktERR;
+    }
+
     SEND_EVT(pkt, LWPKT_EVT_PRE_WRITE);
 
-    if (!LWPKT_IS_VALID(pkt) || (data == NULL && len > 0)) {
+    if (data == NULL && len > 0) {
         res = lwpktERR;
         goto fast_return;
     } else {
@@ -781,6 +838,9 @@ lwpkt_reset(lwpkt_t* pkt) {
  */
 lwpktr_t
 lwpkt_set_evt_fn(lwpkt_t* pkt, lwpkt_evt_fn evt_fn) {
+    if (!LWPKT_IS_VALID(pkt)) {
+        return lwpktERR;
+    }
     pkt->evt_fn = evt_fn;
 
     return lwpktOK;
@@ -799,10 +859,12 @@ lwpkt_set_evt_fn(lwpkt_t* pkt, lwpkt_evt_fn evt_fn) {
  */
 void
 lwpkt_set_crc_enabled(lwpkt_t* pkt, uint8_t enable) {
-    if (enable) {
-        pkt->flags |= LWPKT_FLAG_USE_CRC;
-    } else {
-        pkt->flags &= ~LWPKT_FLAG_USE_CRC;
+    if (LWPKT_IS_VALID(pkt)) {
+        if (enable) {
+            pkt->flags |= LWPKT_FLAG_USE_CRC;
+        } else {
+            pkt->flags &= ~LWPKT_FLAG_USE_CRC;
+        }
     }
 }
 
@@ -819,10 +881,12 @@ lwpkt_set_crc_enabled(lwpkt_t* pkt, uint8_t enable) {
  */
 void
 lwpkt_set_crc32_enabled(lwpkt_t* pkt, uint8_t enable) {
-    if (enable) {
-        pkt->flags |= LWPKT_FLAG_CRC32;
-    } else {
-        pkt->flags &= ~LWPKT_FLAG_CRC32;
+    if (LWPKT_IS_VALID(pkt)) {
+        if (enable) {
+            pkt->flags |= LWPKT_FLAG_CRC32;
+        } else {
+            pkt->flags &= ~LWPKT_FLAG_CRC32;
+        }
     }
 }
 
@@ -839,10 +903,12 @@ lwpkt_set_crc32_enabled(lwpkt_t* pkt, uint8_t enable) {
  */
 void
 lwpkt_set_addr_enabled(lwpkt_t* pkt, uint8_t enable) {
-    if (enable) {
-        pkt->flags |= LWPKT_FLAG_USE_ADDR;
-    } else {
-        pkt->flags &= ~LWPKT_FLAG_USE_ADDR;
+    if (LWPKT_IS_VALID(pkt)) {
+        if (enable) {
+            pkt->flags |= LWPKT_FLAG_USE_ADDR;
+        } else {
+            pkt->flags &= ~LWPKT_FLAG_USE_ADDR;
+        }
     }
 }
 
@@ -859,10 +925,12 @@ lwpkt_set_addr_enabled(lwpkt_t* pkt, uint8_t enable) {
  */
 void
 lwpkt_set_addr_extended_enabled(lwpkt_t* pkt, uint8_t enable) {
-    if (enable) {
-        pkt->flags |= LWPKT_FLAG_ADDR_EXTENDED;
-    } else {
-        pkt->flags &= ~LWPKT_FLAG_ADDR_EXTENDED;
+    if (LWPKT_IS_VALID(pkt)) {
+        if (enable) {
+            pkt->flags |= LWPKT_FLAG_ADDR_EXTENDED;
+        } else {
+            pkt->flags &= ~LWPKT_FLAG_ADDR_EXTENDED;
+        }
     }
 }
 
@@ -879,10 +947,12 @@ lwpkt_set_addr_extended_enabled(lwpkt_t* pkt, uint8_t enable) {
  */
 void
 lwpkt_set_cmd_enabled(lwpkt_t* pkt, uint8_t enable) {
-    if (enable) {
-        pkt->flags |= LWPKT_FLAG_USE_CMD;
-    } else {
-        pkt->flags &= ~LWPKT_FLAG_USE_CMD;
+    if (LWPKT_IS_VALID(pkt)) {
+        if (enable) {
+            pkt->flags |= LWPKT_FLAG_USE_CMD;
+        } else {
+            pkt->flags &= ~LWPKT_FLAG_USE_CMD;
+        }
     }
 }
 
@@ -899,10 +969,12 @@ lwpkt_set_cmd_enabled(lwpkt_t* pkt, uint8_t enable) {
  */
 void
 lwpkt_set_cmd_extended_enabled(lwpkt_t* pkt, uint8_t enable) {
-    if (enable) {
-        pkt->flags |= LWPKT_FLAG_CMD_EXTENDED;
-    } else {
-        pkt->flags &= ~LWPKT_FLAG_CMD_EXTENDED;
+    if (LWPKT_IS_VALID(pkt)) {
+        if (enable) {
+            pkt->flags |= LWPKT_FLAG_CMD_EXTENDED;
+        } else {
+            pkt->flags &= ~LWPKT_FLAG_CMD_EXTENDED;
+        }
     }
 }
 
@@ -919,10 +991,12 @@ lwpkt_set_cmd_extended_enabled(lwpkt_t* pkt, uint8_t enable) {
  */
 void
 lwpkt_set_flags_enabled(lwpkt_t* pkt, uint8_t enable) {
-    if (enable) {
-        pkt->flags |= LWPKT_FLAG_USE_FLAGS;
-    } else {
-        pkt->flags &= ~LWPKT_FLAG_USE_FLAGS;
+    if (LWPKT_IS_VALID(pkt)) {
+        if (enable) {
+            pkt->flags |= LWPKT_FLAG_USE_FLAGS;
+        } else {
+            pkt->flags &= ~LWPKT_FLAG_USE_FLAGS;
+        }
     }
 }
 
