@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "lwpkt"
-version = "1.5.1"
+version = "2.0.0"
 description = "Lightweight packet protocol library for communication implementation"
 readme = "README.md"
 requires-python = ">=3.10"

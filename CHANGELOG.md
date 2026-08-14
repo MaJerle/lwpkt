@@ -2,6 +2,17 @@
 
 ## Develop
 
+## v2.0.0
+
+- **Breaking (Python):** `rx_process()` now raises typed exceptions (`LwPKTError` and subclasses)
+  on malformed input, instead of silently discarding or printing to console
+- Publish Python implementation to PyPI as `lwpkt` (`pip install lwpkt`)
+- Add continuation-byte limits to variable-length fields (`len`, address, `cmd`, `flags`) in both
+  C and Python, rejecting corrupted/malicious streams instead of parsing them unbounded
+- Add missing `NULL`-instance checks across setter functions and `lwpkt_write`
+- Update bundled LwRB to latest version
+- Add GCC CMake preset for native builds
+
 ## v1.5.1
 
 - Fix the platformio library package description
