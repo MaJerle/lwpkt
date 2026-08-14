@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lwpkt"
+version = "1.5.1"
+description = "Lightweight packet protocol library for communication implementation"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
+keywords = [
+    "lwpkt", "packet", "protocol", "manager", "communication", "com", "lightweight",
+    "rs-485", "rs-422", "rs485", "rs422", "rs-232", "rs232", "uart", "usart", "lpuart",
+]
+authors = [
+    { name = "Tilen Majerle", email = "tilen@majerle.eu" },
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Topic :: Communications",
+    "Topic :: Software Development :: Embedded Systems",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+]
+
+[project.optional-dependencies]
+test = ["pytest"]
+
+[project.urls]
+Homepage = "https://github.com/MaJerle/lwpkt"
+Repository = "https://github.com/MaJerle/lwpkt.git"
+Documentation = "https://docs.majerle.eu/projects/lwpkt/"
+Issues = "https://github.com/MaJerle/lwpkt/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]

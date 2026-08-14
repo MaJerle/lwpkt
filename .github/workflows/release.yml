@@ -52,3 +52,30 @@ jobs:
         env:
           PLATFORMIO_AUTH_TOKEN: ${{ secrets.PLATFORMIO_AUTH_TOKEN }}
         run: pio pkg publish --type library --non-interactive
+
+  # Publish python/ package to PyPI
+  publish-pypi:
+    runs-on: ubuntu-latest
+    environment: pypi # must match the environment name entered when registering the trusted publisher on pypi.org
+    permissions:
+      id-token: write # required for PyPI trusted publishing
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install build tooling
+        run: pip install build
+
+      - name: Build package
+        working-directory: python
+        run: python -m build
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: python/dist
