@@ -370,7 +370,7 @@ lwpkt_init(lwpkt_t* pkt, lwrb_t* tx_rb, lwrb_t* rx_rb) {
 
     pkt->tx_rb = tx_rb;
     pkt->rx_rb = rx_rb;
-    pkt->flags |= 0xFFU; /* By default enable all dynamically enabled features */
+    pkt->flags = ~0; /* By default enable all dynamically enabled features */
 
     return lwpktOK;
 }
