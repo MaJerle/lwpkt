@@ -1,4 +1,4 @@
-name: Release workflow
+name: Create Release
 
 on:
   push:
@@ -7,23 +7,29 @@ on:
       - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
 
 jobs:
-  # Create the release from the tag
   create-release:
-    name: Create Release
+    name: Create GitHub Release
     runs-on: ubuntu-latest
+    
+    # Explicitly grant permission to create/write releases
+    permissions:
+      contents: write
+
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
+      # Step 1: Check out the repository code
+      # Fetch the full history to compare between tags
+      - name: Checkout Code
+        uses: actions/checkout@v4
         with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
-          body: |
-            See the [CHANGELOG](CHANGELOG.md)
+          fetch-depth: 0
+
+      # Generate the release
+      - name: Generate and Publish Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          generate_release_notes: true
           draft: false
           prerelease: false
 
@@ -46,3 +52,30 @@ jobs:
         env:
           PLATFORMIO_AUTH_TOKEN: ${{ secrets.PLATFORMIO_AUTH_TOKEN }}
         run: pio pkg publish --type library --non-interactive
+
+  # Publish python/ package to PyPI
+  publish-pypi:
+    runs-on: ubuntu-latest
+    environment: pypi # must match the environment name entered when registering the trusted publisher on pypi.org
+    permissions:
+      id-token: write # required for PyPI trusted publishing
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install build tooling
+        run: pip install build
+
+      - name: Build package
+        working-directory: python
+        run: python -m build
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: python/dist

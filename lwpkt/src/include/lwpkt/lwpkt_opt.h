@@ -29,7 +29,7 @@
  * This file is part of LwPKT - Lightweight packet protocol library.
  *
  * Author:          Tilen MAJERLE <tilen@majerle.eu>
- * Version:         v1.5.1
+ * Version:         v2.0.0
  */
 #ifndef LWPKT_OPT_HDR_H
 #define LWPKT_OPT_HDR_H
