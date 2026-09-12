@@ -1,6 +1,6 @@
 # Packet protocol manager
 
-<h3>Read first: <a href="http://docs.majerle.eu/projects/lwpkt/">Documentation</a></h3>
+[Open documentation](https://docs.majerle.eu/projects/lwpkt/)
 
 ## Features
 
