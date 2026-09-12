@@ -4,7 +4,7 @@
 
 ## Features
 
-* Written in C (C11), compatible with ``stdint.h`` for size data types
+* Written in C (C11), compatible with `stdint.h` data types
 * Platform independent, no architecture specific code
 * Uses *LwRB* library for data read/write operations
 * Optimized for embedded systems, allows high optimization for data transfer

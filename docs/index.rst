@@ -16,7 +16,7 @@ LwPKT is a generic packet protocol library optimized for embedded systems.
 Features
 ^^^^^^^^
 
-* Written in C (C11), compatible with ``stdint.h`` for size data types
+* Written in C (C11), compatible with ``stdint.h`` data types
 * Platform independent, no architecture specific code
 * Uses `LwRB <https://github.com/MaJerle/lwrb>`_ library for data read/write operations
 * Support for events on packet ready, read or write operation
