@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (c) 2024 Tilen MAJERLE
+ * Copyright (c) 2026 Tilen MAJERLE
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -59,7 +59,7 @@ extern "C" {
 
 /**
  * \brief           Memory set function
- * 
+ *
  * \note            Function footprint is the same as \ref memset
  */
 #ifndef LWPKT_MEMSET
@@ -68,7 +68,7 @@ extern "C" {
 
 /**
  * \brief           Memory copy function
- * 
+ *
  * \note            Function footprint is the same as \ref memcpy
  */
 #ifndef LWPKT_MEMCPY
@@ -96,12 +96,13 @@ extern "C" {
  *
  * This features is useful if communication is between 2 devices exclusively,
  * without addressing requirements
- * 
+ *
  * Configuration options:
  *  - `LWPKT_OFF`: Feature is globally disabled in the library
  *  - `LWPKT_ON_STATIC`: Feature is globally enabled in the library
- *  - `LWPKT_ON_DYNAMIC`: Feature is dynamically enabled/disabled in the library, according to the LwPKT object instance.
- *      If set to `LWPKT_ON_DYNAMIC`, feature is by default enabled, but it can be disabled with appropriate API function.
+ *  - `LWPKT_ON_DYNAMIC`: Feature is dynamically enabled/disabled in the library, according to the LwPKT object
+ * instance. If set to `LWPKT_ON_DYNAMIC`, feature is by default enabled, but it can be disabled with appropriate API
+ * function.
  */
 #ifndef LWPKT_CFG_USE_ADDR
 #define LWPKT_CFG_USE_ADDR LWPKT_ON_STATIC
@@ -117,12 +118,13 @@ extern "C" {
  * When disabled, simple `8-bit` address is fixed with single byte.
  *
  * \note            Feature is disabled by default to keep architecture compatibility
- * 
+ *
  * Configuration options:
  *  - `LWPKT_OFF`: Feature is globally disabled in the library
  *  - `LWPKT_ON_STATIC`: Feature is globally enabled in the library
- *  - `LWPKT_ON_DYNAMIC`: Feature is dynamically enabled/disabled in the library, according to the LwPKT object instance.
- *      If set to `LWPKT_ON_DYNAMIC`, feature is by default enabled, but it can be disabled with appropriate API function.
+ *  - `LWPKT_ON_DYNAMIC`: Feature is dynamically enabled/disabled in the library, according to the LwPKT object
+ * instance. If set to `LWPKT_ON_DYNAMIC`, feature is by default enabled, but it can be disabled with appropriate API
+ * function.
  */
 #ifndef LWPKT_CFG_ADDR_EXTENDED
 #define LWPKT_CFG_ADDR_EXTENDED LWPKT_OFF
@@ -132,12 +134,13 @@ extern "C" {
  * \brief           Enables `> 0` or disables `0` `cmd` field in the protocol.
  *
  * When disabled, command part is not used
- * 
+ *
  * Configuration options:
  *  - `LWPKT_OFF`: Feature is globally disabled in the library
  *  - `LWPKT_ON_STATIC`: Feature is globally enabled in the library
- *  - `LWPKT_ON_DYNAMIC`: Feature is dynamically enabled/disabled in the library, according to the LwPKT object instance.
- *      If set to `LWPKT_ON_DYNAMIC`, feature is by default enabled, but it can be disabled with appropriate API function.
+ *  - `LWPKT_ON_DYNAMIC`: Feature is dynamically enabled/disabled in the library, according to the LwPKT object
+ * instance. If set to `LWPKT_ON_DYNAMIC`, feature is by default enabled, but it can be disabled with appropriate API
+ * function.
  */
 #ifndef LWPKT_CFG_USE_CMD
 #define LWPKT_CFG_USE_CMD LWPKT_ON_STATIC
@@ -148,16 +151,17 @@ extern "C" {
  * \note            \ref LWPKT_CFG_USE_CMD must be enabled for this feature to work
  *
  * When enabled, multi-byte command length is supported in the protocol and is variable length integer encoded.
- * 
+ *
  * When disabled, simple `8-bit` address is fixed with single byte.
  *
  * \note            Feature is disabled by default to keep architecture compatibility
- * 
+ *
  * Configuration options:
  *  - `LWPKT_OFF`: Feature is globally disabled in the library
  *  - `LWPKT_ON_STATIC`: Feature is globally enabled in the library
- *  - `LWPKT_ON_DYNAMIC`: Feature is dynamically enabled/disabled in the library, according to the LwPKT object instance.
- *      If set to `LWPKT_ON_DYNAMIC`, feature is by default enabled, but it can be disabled with appropriate API function.
+ *  - `LWPKT_ON_DYNAMIC`: Feature is dynamically enabled/disabled in the library, according to the LwPKT object
+ * instance. If set to `LWPKT_ON_DYNAMIC`, feature is by default enabled, but it can be disabled with appropriate API
+ * function.
  */
 #ifndef LWPKT_CFG_CMD_EXTENDED
 #define LWPKT_CFG_CMD_EXTENDED LWPKT_OFF
@@ -165,12 +169,13 @@ extern "C" {
 
 /**
  * \brief           Enables `> 0` or disables `0` CRC check in the protocol.
- * 
+ *
  * Configuration options:
  *  - `LWPKT_OFF`: Feature is globally disabled in the library
  *  - `LWPKT_ON_STATIC`: Feature is globally enabled in the library
- *  - `LWPKT_ON_DYNAMIC`: Feature is dynamically enabled/disabled in the library, according to the LwPKT object instance.
- *      If set to `LWPKT_ON_DYNAMIC`, feature is by default enabled, but it can be disabled with appropriate API function.
+ *  - `LWPKT_ON_DYNAMIC`: Feature is dynamically enabled/disabled in the library, according to the LwPKT object
+ * instance. If set to `LWPKT_ON_DYNAMIC`, feature is by default enabled, but it can be disabled with appropriate API
+ * function.
  */
 #ifndef LWPKT_CFG_USE_CRC
 #define LWPKT_CFG_USE_CRC LWPKT_ON_STATIC
@@ -179,14 +184,15 @@ extern "C" {
 /**
  * \brief           Enables `> 0` or disables `0` CRC-32 type.
  * \note            \ref LWPKT_CFG_USE_CRC must be enabled for this feature to work
- * 
+ *
  * It controls if CRC type is set to `8-bits` or `32-bits`
- * 
+ *
  * Configuration options:
- *  - `LWPKT_OFF`: CRC is ˙8-bits`, fixed value. 
+ *  - `LWPKT_OFF`: CRC is ˙8-bits`, fixed value.
  *  - `LWPKT_ON_STATIC`: Feature is globally enabled in the library and CRC is set fixed to `32-bits`
- *  - `LWPKT_ON_DYNAMIC`: Feature is dynamically enabled/disabled in the library, according to the LwPKT object instance.
- *      If set to `LWPKT_ON_DYNAMIC`, feature is by default enabled, but it can be disabled with appropriate API function.
+ *  - `LWPKT_ON_DYNAMIC`: Feature is dynamically enabled/disabled in the library, according to the LwPKT object
+ * instance. If set to `LWPKT_ON_DYNAMIC`, feature is by default enabled, but it can be disabled with appropriate API
+ * function.
  */
 #ifndef LWPKT_CFG_CRC32
 #define LWPKT_CFG_CRC32 LWPKT_OFF
@@ -194,17 +200,18 @@ extern "C" {
 
 /**
  * \brief           Enables `> 0` or disables `0` flags field in the protocol.
- * 
+ *
  * When enabled, multi-byte addresses are supported with MSB codification.
  * Maximum address is limited to `32-bits`.
  *
  * \note            Feature is disabled by default to keep architecture compatibility
- * 
+ *
  * Configuration options:
  *  - `LWPKT_OFF`: Feature is globally disabled in the library
  *  - `LWPKT_ON_STATIC`: Feature is globally enabled in the library
- *  - `LWPKT_ON_DYNAMIC`: Feature is dynamically enabled/disabled in the library, according to the LwPKT object instance.
- *      If set to `LWPKT_ON_DYNAMIC`, feature is by default enabled, but it can be disabled with appropriate API function.
+ *  - `LWPKT_ON_DYNAMIC`: Feature is dynamically enabled/disabled in the library, according to the LwPKT object
+ * instance. If set to `LWPKT_ON_DYNAMIC`, feature is by default enabled, but it can be disabled with appropriate API
+ * function.
  */
 #ifndef LWPKT_CFG_USE_FLAGS
 #define LWPKT_CFG_USE_FLAGS LWPKT_OFF

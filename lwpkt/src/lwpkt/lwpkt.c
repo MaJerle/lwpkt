@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (c) 2024 Tilen MAJERLE
+ * Copyright (c) 2026 Tilen MAJERLE
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -132,8 +132,8 @@
 #define CHECK_FEATURE_CONFIG_MODE_ENABLED(_pkt_, _feature_, _flag_)                                                    \
     (0                                   /* For alignment purpose only */                                              \
      || ((_feature_) == LWPKT_ON_STATIC) /* LWPKT_ON_STATIC == feature is globally enabled */                          \
-     || ((_feature_) == LWPKT_ON_DYNAMIC                                                                               \
-         && ((_pkt_)->flags & (_flag_))) /* LWPKT_ON_DYNAMIC == feature is dynamically enabled */                      \
+     || ((_feature_) == LWPKT_ON_DYNAMIC && ((_pkt_)->flags & (_flag_))) /* LWPKT_ON_DYNAMIC == feature is dynamically \
+                                                                            enabled */                                 \
     )
 
 /**
@@ -152,10 +152,10 @@ prv_calc_num_bytes_for_len(uint32_t len_var) {
 }
 
 /**
- * \brief           Set next state 
- * 
- * \param           pkt 
- * \param           state 
+ * \brief           Set next state
+ *
+ * \param           pkt
+ * \param           state
  */
 static void
 prv_pkt_set_state(lwpkt_t* pkt, lwpkt_state_t state) {
@@ -165,8 +165,8 @@ prv_pkt_set_state(lwpkt_t* pkt, lwpkt_state_t state) {
 
 /**
  * \brief           Reset the internal structure
- * 
- * \param           pkt 
+ *
+ * \param           pkt
  */
 static void
 prv_pkt_reset(lwpkt_t* pkt) {
@@ -178,7 +178,7 @@ prv_pkt_reset(lwpkt_t* pkt) {
 
 /**
  * \brief           Calculate one bloc of data
- * 
+ *
  * \param           crc_curr: Latest CRC object to continue from
  * \param           new_entry: New value to add to CRC
  * \param           poly: Polynomial to use
@@ -224,7 +224,7 @@ prv_crc_in(lwpkt_t* pkt, lwpkt_crc_t* crcobj, const void* inp, const size_t len)
 /**
  * \brief           Finish the CRC calculation.
  * When configured to CRC-32 bit, inverse the output
- * 
+ *
  * \param           pkt: LwPKT object
  * \param           crcobj: CRC object
  * \return          CRC result
@@ -257,9 +257,9 @@ prv_crc_init(lwpkt_t* pkt, lwpkt_crc_t* crcobj) {
 
 /**
  * \brief           Write data to the output stream, with variable length array
- * 
+ *
  *                  The parameters are different according to the CRC enabled/disabled status
- * 
+ *
  * \param           pkt: Packet object
  * \param           var_num: Number to encode
  * \param           crc: CRC object
@@ -284,7 +284,7 @@ prv_write_bytes_var_encoded(lwpkt_t* pkt, uint32_t var_num
 
 /**
  * \brief           Single function to define steps between packet states
- * 
+ *
  * \param           pkt: Packet handle
  */
 static void
@@ -292,16 +292,16 @@ prv_go_to_next_packet_rx_state(lwpkt_t* pkt) {
     lwpkt_state_t next_state = LWPKT_STATE_END;
     switch (pkt->m.state) {
         /*
-         * Start, addressing, flags and command are all optional 
+         * Start, addressing, flags and command are all optional
          * and all of them are in a sequence.
-         * 
+         *
          * If one of them is disabled, we can simply use a fall-through mode
          * and check for a next state to move to, if that state is enabled.
-         * 
+         *
          * This is very valid C syntax
-         * 
+         *
          * From start state, we can go to:
-         * 
+         *
          * 1. addressing, if addressing is enabled
          * 2. flags management
          * 2. command, if it is enabled
@@ -420,12 +420,12 @@ lwpkt_set_addr(lwpkt_t* pkt, lwpkt_addr_t addr) {
 /**
  * \brief           Read raw data from RX ring buffer, parse the characters
  *                  and try to construct the receive packet
- * 
+ *
  * \note            This is the raw implementation, and does not take into account potential
  *                  data desynchronization or data loss at the transmission layer.
- * 
+ *
  *                  Use \ref lwpkt_process function instead
- * 
+ *
  * \param[in]       pkt: Packet instance
  * \return          \ref lwpktVALID when packet valid, member of \ref lwpktr_t otherwise
  */
@@ -616,11 +616,11 @@ retpre:
 /**
  * \brief           Process packet RX data and check for timeouts,
  *                  which may occur of there is no receive data for up to maximum time.
- * 
+ *
  * \note            This function shall be called periodically,
  *                  at least once per every \ref LWPKT_CFG_PROCESS_INPROG_TIMEOUT milliseconds,
  *                  to properly handle delays and timeouts in the application
- * 
+ *
  * \param[in]       pkt: Packet instance
  * \param[in]       time: Current time in units of milliseconds
  * \return          \ref lwpktOK if processing OK, member of \ref lwpktr_t otherwise
@@ -852,7 +852,7 @@ lwpkt_set_evt_fn(lwpkt_t* pkt, lwpkt_evt_fn evt_fn) {
 
 /**
  * \brief           Set CRC mode enabled.
- * 
+ *
  * \note            This function is only available, if \ref LWPKT_CFG_USE_CRC is `2`
  * \param           pkt: LwPKT instance
  * \param           enable: `1` to enable, `0` otherwise
@@ -874,7 +874,7 @@ lwpkt_set_crc_enabled(lwpkt_t* pkt, uint8_t enable) {
 
 /**
  * \brief           Enable extended addressing in the packet
- * 
+ *
  * \note            This function is only available, if \ref LWPKT_CFG_CRC32 is `2`
  * \param           pkt: LwPKT instance
  * \param           enable: `1` to enable, `0` otherwise
@@ -896,7 +896,7 @@ lwpkt_set_crc32_enabled(lwpkt_t* pkt, uint8_t enable) {
 
 /**
  * \brief           Enable addressing in the packet
- * 
+ *
  * \note            This function is only available, if \ref LWPKT_CFG_USE_ADDR is `2`
  * \param           pkt: LwPKT instance
  * \param           enable: `1` to enable, `0` otherwise
@@ -918,7 +918,7 @@ lwpkt_set_addr_enabled(lwpkt_t* pkt, uint8_t enable) {
 
 /**
  * \brief           Enable extended addressing in the packet
- * 
+ *
  * \note            This function is only available, if \ref LWPKT_CFG_ADDR_EXTENDED is `2`
  * \param           pkt: LwPKT instance
  * \param           enable: `1` to enable, `0` otherwise
@@ -940,7 +940,7 @@ lwpkt_set_addr_extended_enabled(lwpkt_t* pkt, uint8_t enable) {
 
 /**
  * \brief           Enable CMD mode in the packet
- * 
+ *
  * \note            This function is only available, if \ref LWPKT_CFG_USE_CMD is `2`
  * \param           pkt: LwPKT instance
  * \param           enable: `1` to enable, `0` otherwise
@@ -962,7 +962,7 @@ lwpkt_set_cmd_enabled(lwpkt_t* pkt, uint8_t enable) {
 
 /**
  * \brief           Enable extended addressing in the packet
- * 
+ *
  * \note            This function is only available, if \ref LWPKT_CFG_CMD_EXTENDED is `2`
  * \param           pkt: LwPKT instance
  * \param           enable: `1` to enable, `0` otherwise
@@ -984,7 +984,7 @@ lwpkt_set_cmd_extended_enabled(lwpkt_t* pkt, uint8_t enable) {
 
 /**
  * \brief           Enable FLAGS mode in the packet
- * 
+ *
  * \note            This function is only available, if \ref LWPKT_CFG_USE_FLAGS is `2`
  * \param           pkt: LwPKT instance
  * \param           enable: `1` to enable, `0` otherwise

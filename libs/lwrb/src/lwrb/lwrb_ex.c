@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (c) 2024 Tilen MAJERLE
+ * Copyright (c) 2026 Tilen MAJERLE
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -49,9 +49,9 @@
  * \param[in]       btw: Bytes To Write, length
  * \return          Number of bytes written to buffer, will always return btw
  * \note            Functionality is primary two parts, always writes some linear region, then
- *                      writes the wrap region if there is more data to write. The r indicator is advanced if w overtakes
- *                      it. This operation is a read op as well as a write op. For thread-safety mutexes may be desired,
- *                      see documentation.
+ *                      writes the wrap region if there is more data to write. The r indicator is advanced if w
+ * overtakes it. This operation is a read op as well as a write op. For thread-safety mutexes may be desired, see
+ * documentation.
  */
 lwrb_sz_t
 lwrb_overwrite(lwrb_t* buff, const void* data, lwrb_sz_t btw) {
@@ -67,9 +67,9 @@ lwrb_overwrite(lwrb_t* buff, const void* data, lwrb_sz_t btw) {
     if (btw > max_cap) {
         /*
          * When data to write is larger than max buffer capacity,
-         * we can reset the buffer and simply write last part of 
+         * we can reset the buffer and simply write last part of
          * the input buffer.
-         * 
+         *
          * This is done here, by calculating remaining
          * length and then advancing to the end of input buffer
          */
@@ -77,7 +77,7 @@ lwrb_overwrite(lwrb_t* buff, const void* data, lwrb_sz_t btw) {
         btw = max_cap;      /* Limit data to write */
         lwrb_reset(buff);   /* Reset buffer */
     } else {
-        /* 
+        /*
          * Bytes to write is less than capacity
          * We have to perform max one skip operation,
          * but only if free memory is less than
@@ -94,13 +94,13 @@ lwrb_overwrite(lwrb_t* buff, const void* data, lwrb_sz_t btw) {
 }
 
 /**
- * \brief           Move one ring buffer to another, up to the amount of data in the source, or amount 
+ * \brief           Move one ring buffer to another, up to the amount of data in the source, or amount
  *                      of data free in the destination.
  * \param[in]       dest: Buffer handle that the copied data will be written to
  * \param[in]       src:  Buffer handle that the copied data will come from.
  *                      Source buffer will be effectively read upon operation.
  * \return          Number of bytes written to destination buffer
- * \note            This operation is a read op to the source, on success it will update the r index. 
+ * \note            This operation is a read op to the source, on success it will update the r index.
  *                  As well as a write op to the destination, and may update the w index.
  *                  For thread-safety mutexes may be desired, see documentation.
  */
