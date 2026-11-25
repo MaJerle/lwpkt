@@ -2,6 +2,11 @@
 
 ## Develop
 
+## v2.1.0
+
+- Improve the code stability
+- Improve the CRC computation performance
+
 ## v2.0.0
 
 - **Breaking (Python):** `rx_process()` now raises typed exceptions (`LwPKTError` and subclasses)
