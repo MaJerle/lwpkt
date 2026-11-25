@@ -16,16 +16,19 @@ LwPKT is a generic packet protocol library optimized for embedded systems.
 Features
 ^^^^^^^^
 
-* Written in C (C11), compatible with ``size_t`` for size data types
+* Written in C (C11), compatible with ``stdint.h`` data types
 * Platform independent, no architecture specific code
 * Uses `LwRB <https://github.com/MaJerle/lwrb>`_ library for data read/write operations
-* Support for events on packet ready, read or write operation
+* Support for events on packet-ready, read and write operations
 * Optimized for embedded systems, allows high optimization for data transfer
-* Configurable settings for packet structure and variable data length
-* Allows multiple notes in network with `from` and `to` addresses
+* Configurable packet structure with support for variable-length data, theoretically unlimited size
+* Allows multiple nodes in network with ``from`` and ``to`` addresses
 * Separate optional field for *command* data type
-* Variable data length to support theoretically unlimited packet length
-* CRC check to handle data transmission errors
+* CRC-8 or CRC-32 check to handle data transmission errors, selectable at compile time
+* Runtime toggle of address, command, flags and CRC features per packet instance
+* Optional extended (variable-length) address and command encoding for larger identifier ranges
+* Hardened parsing with bounded variable-length fields, rejecting malformed or oversized packets
+* Python implementation available, published to PyPI as ``lwpkt``
 * User friendly MIT license
 
 Applications

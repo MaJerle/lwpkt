@@ -4,6 +4,7 @@ Pure-Python encoder/decoder for the LwPKT wire protocol, mirroring the reference
 C implementation at https://github.com/MaJerle/lwpkt.
 """
 from .lwpkt import (
+    ADDR_BROADCAST,
     LwPKT,
     LwPKTCRCError,
     LwPKTError,
@@ -23,4 +24,5 @@ __all__ = [
     "LwPKTStopByteError",
     "START_BYTE",
     "STOP_BYTE",
+    "ADDR_BROADCAST",
 ]

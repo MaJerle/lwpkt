@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (c) 2024 Tilen MAJERLE
+ * Copyright (c) 2026 Tilen MAJERLE
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -153,12 +153,13 @@ lwrb_get_arg(lwrb_t* buff) {
 
 /**
  * \brief           Write data to buffer.
- *                  Copies data from `data` array to buffer and advances the write pointer for a maximum of `btw` number of bytes.
- * 
+ *                  Copies data from `data` array to buffer and advances the write pointer for a maximum of `btw` number
+ * of bytes.
+ *
  *                  It copies less if there is less memory available in the buffer.
  *                  User must check the return value of the function and compare it to
  *                  the requested write length, to determine if everything has been written
- * 
+ *
  * \note            Use \ref lwrb_write_ex for more advanced usage
  *
  * \param[in]       buff: Ring buffer instance
@@ -180,7 +181,7 @@ lwrb_write(lwrb_t* buff, const void* data, lwrb_sz_t btw) {
 
 /**
  * \brief           Write extended functionality
- * 
+ *
  * \param           buff: Ring buffer instance
  * \param           data: Pointer to data to write into buffer
  * \param           btw: Number of bytes to write
@@ -241,10 +242,11 @@ lwrb_write_ex(lwrb_t* buff, const void* data, lwrb_sz_t btw, lwrb_sz_t* bwritten
 
 /**
  * \brief           Read data from buffer.
- *                  Copies data from `data` array to buffer and advances the read pointer for a maximum of `btr` number of bytes.
- * 
+ *                  Copies data from `data` array to buffer and advances the read pointer for a maximum of `btr` number
+ * of bytes.
+ *
  *                  It copies less if there is less data available in the buffer.
- * 
+ *
  * \note            Use \ref lwrb_read_ex for more advanced usage
  *
  * \param[in]       buff: Ring buffer instance
@@ -264,11 +266,11 @@ lwrb_read(lwrb_t* buff, void* data, lwrb_sz_t btr) {
 
 /**
  * \brief           Read extended functionality
- * 
+ *
  * \param           buff: Ring buffer instance
- * \param           data: Pointer to memory to write read data from buffer 
+ * \param           data: Pointer to memory to write read data from buffer
  * \param           btr: Number of bytes to read
- * \param           bread: Output pointer to write number of bytes read from buffer and written to the 
+ * \param           bread: Output pointer to write number of bytes read from buffer and written to the
  *                      output `data` variable
  * \param           flags: Optional flags
  *                      \ref LWRB_FLAG_READ_ALL: Request to read all data (up to btr).
@@ -347,7 +349,7 @@ lwrb_peek(const lwrb_t* buff, lwrb_sz_t skip_count, void* data, lwrb_sz_t btp) {
     /*
      * Calculate maximum number of bytes available to read
      * and check if we can even fit to it.
-     * 
+     *
      * The skip count at size of buffer or above is invalid input,
      * thus we can safely exit the function call
      */
@@ -403,9 +405,9 @@ lwrb_get_free(const lwrb_t* buff) {
      *
      * lwrb_get_free is only called for write purpose, and when in FIFO mode, then:
      * - buff->w pointer will not change by another process/interrupt because we are in write mode just now
-     * - buff->r pointer may change by another process. If it gets changed after buff->r has been loaded to local variable,
-     *    buffer will see "free size" less than it actually is. This is not a problem, application can
-     *    always try again to write more data to remaining free memory that was read just during copy operation
+     * - buff->r pointer may change by another process. If it gets changed after buff->r has been loaded to local
+     * variable, buffer will see "free size" less than it actually is. This is not a problem, application can always try
+     * again to write more data to remaining free memory that was read just during copy operation
      */
     w_ptr = LWRB_LOAD(buff->w_ptr, memory_order_relaxed);
     r_ptr = LWRB_LOAD(buff->r_ptr, memory_order_acquire);
@@ -447,9 +449,9 @@ lwrb_get_full(const lwrb_t* buff) {
      *
      * lwrb_get_full is only called for read purpose, and when in FIFO mode, then:
      * - buff->r pointer will not change by another process/interrupt because we are in read mode just now
-     * - buff->w pointer may change by another process. If it gets changed after buff->w has been loaded to local variable,
-     *    buffer will see "full size" less than it really is. This is not a problem, application can
-     *    always try again to read more data from remaining full memory that was written just during copy operation
+     * - buff->w pointer may change by another process. If it gets changed after buff->w has been loaded to local
+     * variable, buffer will see "full size" less than it really is. This is not a problem, application can always try
+     * again to read more data from remaining full memory that was written just during copy operation
      */
     w_ptr = LWRB_LOAD(buff->w_ptr, memory_order_acquire);
     r_ptr = LWRB_LOAD(buff->r_ptr, memory_order_relaxed);
@@ -642,12 +644,12 @@ lwrb_advance(lwrb_t* buff, lwrb_sz_t len) {
 
 /**
  * \brief           Searches for a *needle* in an array, starting from given offset.
- * 
- * \note            This function is not thread-safe. 
- * 
+ *
+ * \note            This function is not thread-safe.
+ *
  * \param           buff: Ring buffer to search for needle in
  * \param           bts: Constant byte array sequence to search for in a buffer
- * \param           len: Length of the \arg bts array 
+ * \param           len: Length of the \arg bts array
  * \param           start_offset: Start offset in the buffer
  * \param           found_idx: Pointer to variable to write index in array where bts has been found
  *                      Must not be set to `NULL`
